@@ -45,8 +45,7 @@ CatatIn adalah aplikasi mobile berbasis Flutter yang terhubung ke backend Larave
 ## 🛠 Teknologi
 - **Frontend:** Flutter
 - **Backend:** Laravel (API)
-- **State Management:** [Provider / GetX / etc.] (sesuaikan)
-- **Database:** MySQL / SQLite (sesuaikan)
+- **Database:** MySQL
 
 ## 📂 Struktur Proyek (Frontend)
 
