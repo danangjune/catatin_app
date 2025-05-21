@@ -28,7 +28,7 @@ CatatIn adalah aplikasi mobile berbasis Flutter yang terhubung ke backend Larave
 - Kategori: Baik / Cukup / Buruk
 - Rekomendasi personal
 
-### 5. Peringatan Cerdas (Smart Insight)
+### 5. Peringatan Cerdas (Tidak Cerdas2 Amat)
 - Defisit pengeluaran
 - Tidak mencatat transaksi 7+ hari
 - Tidak menabung bulan ini
