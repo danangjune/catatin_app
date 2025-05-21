@@ -16,7 +16,6 @@ CatatIn adalah aplikasi mobile berbasis Flutter yang terhubung ke backend Larave
 
 ### 3. Rekapitulasi Bulanan
 - Ringkasan pemasukan, pengeluaran, dan sisa
-- (Opsional) Grafik batang atau pie chart
 
 ### 4. Evaluasi Keuangan Otomatis (SAW Sederhana)
 - Skor kesehatan finansial berdasarkan 5 kriteria:
