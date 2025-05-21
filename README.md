@@ -73,11 +73,11 @@ soon.
 ## ⚙️ Cara Menjalankan (Frontend)
 
 1. Clone repo:
-   #### git clone https://github.com/danangjune/catatin.git
-   #### cd catatin
+   - git clone https://github.com/danangjune/catatin.git
+   - cd catatin
 2. Jalankan:
-   #### flutter pub get
-   #### flutter run
+   - flutter pub get
+   - flutter run
 
 ## 🧑‍💻 Kontribusi
 Pull Request dipersilakan! Buka issue jika ada bug atau saran fitur.
