@@ -33,6 +33,7 @@ dependencies:
   get: ^4.6.5 # Untuk navigasi dan state management ringan
   http: ^0.13.6 # Untuk komunikasi dengan backend
   intl: ^0.18.1 # Untuk format tanggal & angka
+  fl_chart: ^0.65.0 # Untuk grafik
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
