@@ -1,21 +1,126 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:catatin_app/utils/score_calculator.dart';
 
-class EvaluationScreen extends StatelessWidget {
+class EvaluationScreen extends StatefulWidget {
   const EvaluationScreen({Key? key}) : super(key: key);
 
-  // Dummy nilai kriteria user (skala 1–5)
-  final double incomeVsExpense = 4;
-  final double savingConsistency = 3;
-  final double unexpectedExpense = 2;
-  final double recordFrequency = 5;
-  final double savingPercentage = 3;
+  @override
+  State<EvaluationScreen> createState() => _EvaluationScreenState();
+}
+
+class _EvaluationScreenState extends State<EvaluationScreen> {
+  bool isLoading = true;
+  Map<String, double> scores = {
+    'income_ratio': 0,
+    'saving_consistency': 0,
+    'unexpected_expense': 0,
+    'record_frequency': 0,
+    'saving_percentage': 0,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    calculateScores();
+  }
+
+  Future<void> calculateScores() async {
+    try {
+      final now = DateTime.now();
+      final monthStr = "${now.year}-${now.month.toString().padLeft(2, '0')}";
+
+      // Fetch monthly transactions evaluation
+      final response = await http.get(
+        Uri.parse(
+          'http://localhost:8000/api/v1/transactions/evaluation?month=$monthStr',
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        final data = responseData['data'];
+
+        // 1. Rasio pemasukan/pengeluaran
+        final income = data['total_income'] ?? 0;
+        final expense = data['total_expense'] ?? 0;
+        final ratio = income > 0 ? expense / income : 0;
+        scores['income_ratio'] = _calculateIncomeRatio(ratio);
+
+        // 2. Konsistensi menabung
+        final savingConsistency = data['saving_consistency'] ?? 0;
+        scores['saving_consistency'] = _calculateSavingConsistency(
+          savingConsistency,
+        );
+
+        // 3. Pengeluaran tak terduga
+        final unexpectedExpense = data['unexpected_expense'] ?? 0;
+        final unexpectedRatio = income > 0 ? unexpectedExpense / income : 0;
+        scores['unexpected_expense'] = _calculateUnexpectedExpense(
+          unexpectedRatio,
+        );
+
+        // 4. Frekuensi pencatatan
+        final recordDays = data['record_days'] ?? 0;
+        scores['record_frequency'] = _calculateRecordFrequency(recordDays);
+
+        // 5. Persentase tabungan (dihitung dari saving_consistency)
+        final savingPercentage = income > 0 ? (savingConsistency / 4) * 20 : 0;
+        scores['saving_percentage'] = _calculateSavingPercentage(
+          savingPercentage,
+        );
+
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      print('Error calculating scores: $e');
+      setState(() => isLoading = false);
+    }
+  }
+
+  double _calculateIncomeRatio(double ratio) {
+    if (ratio <= 0.5) return 5; // Pengeluaran <= 50% pemasukan
+    if (ratio <= 0.7) return 4; // Pengeluaran <= 70% pemasukan
+    if (ratio <= 0.9) return 3; // Pengeluaran <= 90% pemasukan
+    if (ratio <= 1.0) return 2; // Pengeluaran <= 100% pemasukan
+    return 1; // Pengeluaran > 100% pemasukan
+  }
+
+  double _calculateSavingConsistency(int consistency) {
+    if (consistency >= 4) return 5; // Menabung >= 4 minggu
+    if (consistency >= 3) return 4; // Menabung 3 minggu
+    if (consistency >= 2) return 3; // Menabung 2 minggu
+    if (consistency >= 1) return 2; // Menabung 1 minggu
+    return 1; // Tidak menabung
+  }
+
+  double _calculateUnexpectedExpense(double ratio) {
+    if (ratio <= 0.05) return 5; // Pengeluaran tak terduga <= 5% pemasukan
+    if (ratio <= 0.10) return 4; // <= 10%
+    if (ratio <= 0.15) return 3; // <= 15%
+    if (ratio <= 0.20) return 2; // <= 20%
+    return 1; // > 20%
+  }
+
+  double _calculateRecordFrequency(int days) {
+    if (days >= 25) return 5; // Mencatat >= 25 hari
+    if (days >= 20) return 4; // >= 20 hari
+    if (days >= 15) return 3; // >= 15 hari
+    if (days >= 10) return 2; // >= 10 hari
+    return 1; // < 10 hari
+  }
+
+  double _calculateSavingPercentage(double percentage) {
+    if (percentage >= 20) return 5; // Menabung >= 20% pemasukan
+    if (percentage >= 15) return 4; // >= 15%
+    if (percentage >= 10) return 3; // >= 10%
+    if (percentage >= 5) return 2; // >= 5%
+    return 1; // < 5%
+  }
 
   double calculateSAWScore() {
-    return (incomeVsExpense * 0.35) +
-        (savingConsistency * 0.25) +
-        (unexpectedExpense * 0.15) +
-        (recordFrequency * 0.15) +
-        (savingPercentage * 0.10);
+    return ScoreCalculator.calculateFinalScore(scores);
   }
 
   String getCategory(double score) {
@@ -220,14 +325,23 @@ class EvaluationScreen extends StatelessWidget {
                   SizedBox(height: 16),
                   _buildKriteria(
                     "Rasio Pemasukan vs Pengeluaran",
-                    incomeVsExpense,
+                    scores['income_ratio']!,
                   ),
-                  _buildKriteria("Konsistensi Menabung", savingConsistency),
-                  _buildKriteria("Pengeluaran Tak Terduga", unexpectedExpense),
-                  _buildKriteria("Frekuensi Pencatatan", recordFrequency),
+                  _buildKriteria(
+                    "Konsistensi Menabung",
+                    scores['saving_consistency']!,
+                  ),
+                  _buildKriteria(
+                    "Pengeluaran Tak Terduga",
+                    scores['unexpected_expense']!,
+                  ),
+                  _buildKriteria(
+                    "Frekuensi Pencatatan",
+                    scores['record_frequency']!,
+                  ),
                   _buildKriteria(
                     "Persentase Tabungan dari Pemasukan",
-                    savingPercentage,
+                    scores['saving_percentage']!,
                   ),
                 ],
               ),

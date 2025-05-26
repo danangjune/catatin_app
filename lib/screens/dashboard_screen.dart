@@ -3,6 +3,7 @@ import 'alert_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:catatin_app/utils/score_calculator.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -12,16 +13,140 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  final formatCurrency = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
+
   List<Map<String, dynamic>> alerts = [];
   List<dynamic> transactions = [];
   bool isLoading = true;
   int pemasukan = 0;
   int pengeluaran = 0;
+  double evaluationScore = 0.0;
+  String evaluationCategory = "Memuat...";
+  bool isEvaluationLoading = true;
 
   @override
   void initState() {
     super.initState();
     fetchTransactions();
+    fetchEvaluation();
+  }
+
+  Future<void> fetchEvaluation() async {
+    try {
+      final now = DateTime.now();
+      final monthStr = "${now.year}-${now.month.toString().padLeft(2, '0')}";
+
+      final response = await http.get(
+        Uri.parse(
+          'http://localhost:8000/api/v1/transactions/evaluation?month=$monthStr',
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        final data = responseData['data'];
+
+        // 1. Rasio pemasukan/pengeluaran
+        final income = data['total_income'] ?? 0;
+        final expense = data['total_expense'] ?? 0;
+        final ratio = income > 0 ? expense / income : 0;
+
+        // Hitung scores dengan cara yang sama seperti di EvaluationScreen
+        final scores = {
+          'income_ratio': _calculateIncomeRatio(ratio),
+          'saving_consistency': _calculateSavingConsistency(
+            data['saving_consistency'] ?? 0,
+          ),
+          'unexpected_expense': _calculateUnexpectedExpense(
+            income > 0 ? (data['unexpected_expense'] ?? 0) / income : 0,
+          ),
+          'record_frequency': _calculateRecordFrequency(
+            data['record_days'] ?? 0,
+          ),
+          'saving_percentage': _calculateSavingPercentage(
+            income > 0 ? ((data['saving_consistency'] ?? 0) / 4) * 20 : 0,
+          ),
+        };
+
+        // Calculate weighted score
+        final rawScore = ScoreCalculator.calculateFinalScore(scores);
+
+        setState(() {
+          evaluationScore = rawScore;
+          evaluationCategory = _getCategory(rawScore);
+          isEvaluationLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching evaluation: $e');
+      setState(() => isEvaluationLoading = false);
+    }
+  }
+
+  // Update scoring methods to match EvaluationScreen
+  double _calculateIncomeRatio(double ratio) {
+    if (ratio <= 0.5) return 5; // Pengeluaran <= 50% pemasukan
+    if (ratio <= 0.7) return 4; // Pengeluaran <= 70% pemasukan
+    if (ratio <= 0.9) return 3; // Pengeluaran <= 90% pemasukan
+    if (ratio <= 1.0) return 2; // Pengeluaran <= 100% pemasukan
+    return 1; // Pengeluaran > 100% pemasukan
+  }
+
+  double _calculateSavingConsistency(int consistency) {
+    if (consistency >= 4) return 5; // Menabung >= 4 minggu
+    if (consistency >= 3) return 4; // Menabung 3 minggu
+    if (consistency >= 2) return 3; // Menabung 2 minggu
+    if (consistency >= 1) return 2; // Menabung 1 minggu
+    return 1; // Tidak menabung
+  }
+
+  double _calculateUnexpectedExpense(double ratio) {
+    if (ratio <= 0.05) return 5; // Pengeluaran tak terduga <= 5% pemasukan
+    if (ratio <= 0.10) return 4; // <= 10%
+    if (ratio <= 0.15) return 3; // <= 15%
+    if (ratio <= 0.20) return 2; // <= 20%
+    return 1; // > 20%
+  }
+
+  double _calculateRecordFrequency(int days) {
+    if (days >= 25) return 5; // Mencatat >= 25 hari
+    if (days >= 20) return 4; // >= 20 hari
+    if (days >= 15) return 3; // >= 15 hari
+    if (days >= 10) return 2; // >= 10 hari
+    return 1; // < 10 hari
+  }
+
+  double _calculateSavingPercentage(double percentage) {
+    if (percentage >= 20) return 5; // >= 20%
+    if (percentage >= 10) return 4; // 10-20%
+    if (percentage > 0) return 2; // < 10% tapi > 0
+    return 1; // 0%
+  }
+
+  String _getCategory(double score) {
+    if (score >= 4.1) return "Baik 😊";
+    if (score >= 3.1) return "Cukup 😐";
+    return "Buruk 😟";
+  }
+
+  Color _getCategoryColor(double score) {
+    if (score >= 4.1) return Colors.green;
+    if (score >= 3.1) return Colors.orange;
+    return Colors.red;
+  }
+
+  String _getRecommendation(double score) {
+    if (score <= 3.0) {
+      return "Mulai catat transaksi rutin dan kurangi pengeluaran tak terduga.";
+    }
+    if (score <= 4.0) {
+      return "Pertahankan pencatatan rutin dan tingkatkan tabungan.";
+    }
+    return "Pertahankan kebiasaan baik ini. Keuangan Anda sehat!";
   }
 
   Future<void> fetchTransactions() async {
@@ -196,23 +321,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Dummy Data
-
     final sisa = pemasukan - pengeluaran;
-    final skor = 3.45;
-    final skorPersen = (skor * 20).toInt(); // Jadi 69
-    final kategori =
-        skor >= 4.1
-            ? "Baik 😊"
-            : skor >= 3.1
-            ? "Cukup 😐"
-            : "Buruk 😟";
-    final warnaKategori =
-        skor >= 4.1
-            ? Colors.green
-            : skor >= 3.1
-            ? Colors.orange
-            : Colors.red;
+    final skorPersen = (evaluationScore * 20).toInt();
+    final warnaKategori = _getCategoryColor(evaluationScore);
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -519,27 +630,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "Sisa Saldo",
+                            formatCurrency.format(sisa),
                             style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white.withOpacity(0.9),
-                              fontWeight: FontWeight.w500,
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
                             ),
                           ),
                           SizedBox(height: 8),
                           Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisAlignment:
+                                MainAxisAlignment
+                                    .spaceBetween, // Ubah ke mainAxisAlignment
                             children: [
-                              Text(
-                                "Rp ${sisa.toString()}",
-                                style: TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              Spacer(),
+                              // Hapus Text yang menampilkan sisa untuk kedua kalinya
                               Container(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 12,
@@ -788,155 +893,172 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ],
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
+                  child:
+                      isEvaluationLoading
+                          ? Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          )
+                          : Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                "Skor Keuangan",
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.9),
-                                  fontSize: 16,
-                                ),
-                              ),
-                              SizedBox(height: 8),
                               Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    "$skorPersen",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.bold,
-                                      height: 1,
-                                    ),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Skor Keuangan",
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.9),
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      SizedBox(height: 8),
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            "$skorPersen",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 36,
+                                              fontWeight: FontWeight.bold,
+                                              height: 1,
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: EdgeInsets.only(bottom: 6),
+                                            child: Text(
+                                              "/100",
+                                              style: TextStyle(
+                                                color: Colors.white.withOpacity(
+                                                  0.7,
+                                                ),
+                                                fontSize: 18,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
-                                  Padding(
-                                    padding: EdgeInsets.only(bottom: 6),
-                                    child: Text(
-                                      "/100",
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.7),
-                                        fontSize: 18,
+                                  Container(
+                                    width: 64,
+                                    height: 64,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(32),
+                                    ),
+                                    child: Center(
+                                      child: Icon(
+                                        evaluationScore >= 4.1
+                                            ? Icons.sentiment_very_satisfied
+                                            : evaluationScore >= 3.1
+                                            ? Icons.sentiment_satisfied
+                                            : Icons.sentiment_dissatisfied,
+                                        color: Colors.white,
+                                        size: 32,
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
+                              SizedBox(height: 24),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.star_rounded,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      "Kategori: $evaluationCategory",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 16),
+                              Container(
+                                padding: EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.1),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        Icons.lightbulb_outline,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "Rekomendasi",
+                                            style: TextStyle(
+                                              color: Colors.white.withOpacity(
+                                                0.9,
+                                              ),
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          SizedBox(height: 4),
+                                          Text(
+                                            _getRecommendation(evaluationScore),
+                                            style: TextStyle(
+                                              color: Colors.white.withOpacity(
+                                                0.8,
+                                              ),
+                                              fontSize: 13,
+                                              height: 1.4,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
-                          Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(32),
-                            ),
-                            child: Center(
-                              child: Icon(
-                                skorPersen >= 80
-                                    ? Icons.sentiment_very_satisfied
-                                    : skorPersen >= 60
-                                    ? Icons.sentiment_satisfied
-                                    : Icons.sentiment_dissatisfied,
-                                color: Colors.white,
-                                size: 32,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 24),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.star_rounded,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              "Kategori: $kategori",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      Container(
-                        padding: EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.1),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.lightbulb_outline,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
-                            SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Rekomendasi",
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.9),
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    "Catat transaksi lebih rutin untuk meningkatkan skor keuangan Anda.",
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.8),
-                                      fontSize: 13,
-                                      height: 1.4,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
 
@@ -1001,7 +1123,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Add this new helper method
+  // Update _buildBalanceInfo
   Widget _buildBalanceInfo(
     String title,
     int amount,
@@ -1029,7 +1151,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           SizedBox(height: 8),
           Text(
-            "Rp ${amount.toString()}",
+            formatCurrency.format(amount),
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -1041,6 +1163,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // Update _buildBalanceCard
   Widget _buildBalanceCard(
     String title,
     int amount,
@@ -1080,7 +1203,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           SizedBox(height: 12),
           Text(
-            "Rp ${amount.toString()}",
+            formatCurrency.format(amount),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -1102,7 +1225,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => Navigator.pushNamed(context, route),
+        onTap: () async {
+          final result = await Navigator.pushNamed(context, route);
+          if (result == true) {
+            await fetchTransactions();
+            await fetchEvaluation();
+          }
+        },
         borderRadius: BorderRadius.circular(20),
         child: Container(
           margin: EdgeInsets.all(4),
