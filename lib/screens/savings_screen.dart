@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class SavingsScreen extends StatefulWidget {
   const SavingsScreen({Key? key}) : super(key: key);
@@ -9,20 +11,96 @@ class SavingsScreen extends StatefulWidget {
 
 class _SavingsScreenState extends State<SavingsScreen> {
   final TextEditingController _targetController = TextEditingController();
+  bool isLoading = true;
+  int _target = 0;
+  int _saved = 0;
+  String? _savingId;
 
-  int _target = 2000000; // Dummy target awal
-  int _saved = 800000; // Dummy jumlah yang sudah ditabung
+  @override
+  void initState() {
+    super.initState();
+    fetchCurrentMonthSaving();
+  }
 
-  void _updateTarget() {
-    if (_targetController.text.isNotEmpty) {
-      setState(() {
-        _target = int.tryParse(_targetController.text) ?? _target;
-        _targetController.clear();
-      });
+  Future<void> fetchCurrentMonthSaving() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:8000/api/v1/savings/monthly'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data != null) {
+          setState(() {
+            _target = data['target_amount'] ?? 0;
+            _saved = data['saved_amount'] ?? 0;
+            _savingId = data['id'].toString();
+            isLoading = false;
+          });
+        } else {
+          // Jika belum ada data bulan ini, buat baru
+          createNewMonthlySaving();
+        }
+      }
+    } catch (e) {
+      print('Error fetching savings: $e');
+      setState(() => isLoading = false);
     }
   }
 
-  void _addSavings() {
+  Future<void> createNewMonthlySaving() async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:8000/api/v1/savings'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'target_amount': 2000000, // Default target
+          'saved_amount': 0,
+          'month': DateTime.now().toIso8601String(),
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        final data = json.decode(response.body);
+        setState(() {
+          _target = data['target_amount'];
+          _saved = data['saved_amount'];
+          _savingId = data['id'].toString();
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error creating saving: $e');
+      setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> _updateTarget() async {
+    if (_targetController.text.isEmpty || _savingId == null) return;
+
+    try {
+      final newTarget = int.tryParse(_targetController.text);
+      if (newTarget == null) return;
+
+      final response = await http.patch(
+        Uri.parse('http://localhost:8000/api/v1/savings/$_savingId'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'target_amount': newTarget}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _target = data['target_amount'];
+          _targetController.clear();
+        });
+      }
+    } catch (e) {
+      print('Error updating target: $e');
+    }
+  }
+
+  Future<void> _addSavings() async {
     showDialog(
       context: context,
       builder: (_) {
@@ -68,11 +146,26 @@ class _SavingsScreenState extends State<SavingsScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
               child: Text("Simpan"),
-              onPressed: () {
+              onPressed: () async {
                 final tambah = int.tryParse(controller.text);
-                if (tambah != null) {
-                  setState(() => _saved += tambah);
-                  Navigator.pop(context);
+                if (tambah != null && _savingId != null) {
+                  try {
+                    final response = await http.patch(
+                      Uri.parse(
+                        'http://localhost:8000/api/v1/savings/$_savingId',
+                      ),
+                      headers: {'Content-Type': 'application/json'},
+                      body: json.encode({'add_amount': tambah}),
+                    );
+
+                    if (response.statusCode == 200) {
+                      final data = json.decode(response.body);
+                      setState(() => _saved = data['saved_amount']);
+                      Navigator.pop(context);
+                    }
+                  } catch (e) {
+                    print('Error adding savings: $e');
+                  }
                 }
               },
             ),
@@ -82,8 +175,11 @@ class _SavingsScreenState extends State<SavingsScreen> {
     );
   }
 
-  @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     double progress = (_saved / _target).clamp(0.0, 1.0);
 
     return Scaffold(

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({Key? key}) : super(key: key);
@@ -39,20 +41,48 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
   }
 
-  void _submit() {
+  void _submit() async {
     if (_formKey.currentState!.validate()) {
-      // Simpan transaksi ke backend atau simpan lokal dulu
-      print("Tipe: $_selectedType");
-      print("Kategori: $_selectedCategory");
-      print("Jumlah: ${_amountController.text}");
-      print("Tanggal: $_selectedDate");
-      print("Keterangan: ${_descController.text}");
+      final url = Uri.parse('http://localhost:8000/api/v1/transactions');
 
-      // Kembali ke dashboard atau munculkan snackbar
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Transaksi berhasil disimpan")));
-      Navigator.pop(context);
+      // Mapping tipe
+      final String backendType =
+          _selectedType == 'Pemasukan' ? 'income' : 'expense';
+
+      final body = {
+        'type': backendType,
+        'category':
+            _selectedCategory
+                .toLowerCase(), // optional: lowercase biar konsisten
+        'amount': _amountController.text,
+        'description': _descController.text,
+        'date': _selectedDate.toIso8601String().substring(0, 10), // yyyy-mm-dd
+      };
+
+      try {
+        final response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(body),
+        );
+
+        final responseData = jsonDecode(response.body);
+
+        if (response.statusCode == 201) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Transaksi berhasil ditambahkan')),
+          );
+          Navigator.pop(context);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal: ${responseData['message']}')),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Terjadi kesalahan: $e')));
+      }
     }
   }
 

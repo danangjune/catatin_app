@@ -1,59 +1,203 @@
 import 'package:flutter/material.dart';
 import 'alert_screen.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
 
-  // Fungsi untuk generate alert dummy, bisa disesuaikan nanti dari backend
-  List<Map<String, dynamic>> getAlerts() {
-    List<Map<String, dynamic>> alerts = [];
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
 
-    // Using DateTime to create dynamic conditions for demo
+class _DashboardScreenState extends State<DashboardScreen> {
+  List<Map<String, dynamic>> alerts = [];
+  List<dynamic> transactions = [];
+  bool isLoading = true;
+  int pemasukan = 0;
+  int pengeluaran = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchTransactions();
+  }
+
+  Future<void> fetchTransactions() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:8000/api/v1/transactions'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+
+        setState(() {
+          transactions = responseData['data'];
+
+          // Hitung total pemasukan dan pengeluaran
+          pemasukan = transactions
+              .where((t) => t['type'] == 'income')
+              .fold(0, (sum, t) => sum + (t['amount'] as int));
+
+          pengeluaran = transactions
+              .where((t) => t['type'] == 'expense')
+              .fold(0, (sum, t) => sum + (t['amount'] as int));
+
+          // Generate alerts berdasarkan data transaksi
+          generateAlerts();
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching transactions: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void generateAlerts() {
+    alerts.clear();
     final now = DateTime.now();
+    final formatCurrency = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
 
-    // Dummy kondisi alert with dynamic values
-    bool isDeficit = true;
-    bool noTransaction7Days = now.day % 2 == 0; // Example dynamic condition
-    bool noSavingThisMonth = true;
-    bool incomeDecreased = now.day % 3 == 0; // Example dynamic condition
-
-    if (isDeficit) {
+    // 1. Cek Defisit
+    if (pengeluaran > pemasukan) {
       alerts.add({
         'icon': Icons.warning_amber,
-        'title': '⚠️ Waspada defisit keuangan!',
+        'title': '⚠️ Waspada Defisit!',
         'color': Colors.orange,
-      });
-    }
-    if (noTransaction7Days) {
-      alerts.add({
-        'icon': Icons.edit_calendar,
-        'title': '📌 Belum ada catatan transaksi selama 7 hari',
-        'color': Colors.red,
-      });
-    }
-    if (noSavingThisMonth) {
-      alerts.add({
-        'icon': Icons.savings,
-        'title': '🔔 Belum menabung bulan ini',
-        'color': Colors.blue,
-      });
-    }
-    if (incomeDecreased) {
-      alerts.add({
-        'icon': Icons.trending_down,
-        'title': '📉 Pendapatan menurun',
-        'color': Colors.red,
+        'description': 'Pengeluaran melebihi pemasukan bulan ini',
+        'severity': 'high',
+        'metadata': {
+          'deficit_amount': pengeluaran - pemasukan,
+          'expenses': pengeluaran,
+          'income': pemasukan,
+        },
       });
     }
 
-    return alerts;
+    // 2. Cek Transaksi 7 Hari Terakhir
+    final lastWeekDate = now.subtract(Duration(days: 7));
+    final hasRecentTransactions = transactions.any(
+      (t) => DateTime.parse(t['date']).isAfter(lastWeekDate),
+    );
+
+    if (!hasRecentTransactions) {
+      alerts.add({
+        'icon': Icons.edit_calendar,
+        'title': '📝 Pencatatan Tidak Aktif',
+        'color': Colors.blue,
+        'description': 'Belum ada pencatatan transaksi dalam 7 hari terakhir',
+        'severity': 'medium',
+        'metadata': {
+          'last_transaction_date':
+              transactions.isNotEmpty ? transactions.first['date'] : null,
+        },
+      });
+    }
+
+    // 3. Cek Kategori Pengeluaran Tinggi
+    final categoryTotals = {};
+    for (var tx in transactions.where((t) => t['type'] == 'expense')) {
+      final category = tx['category'] ?? 'Lainnya';
+      categoryTotals[category] = (categoryTotals[category] ?? 0) + tx['amount'];
+    }
+
+    categoryTotals.forEach((category, total) {
+      if (total > (pemasukan * 0.4)) {
+        final percentage = ((total / pemasukan) * 100).toStringAsFixed(1);
+        alerts.add({
+          'icon': Icons.pie_chart,
+          'title': '📊 Pengeluaran $category Tinggi',
+          'color': Colors.red,
+          'description':
+              'Pengeluaran kategori ini melebihi 40% dari pendapatan',
+          'severity': 'high',
+          'metadata': {
+            'category': category,
+            'amount': total,
+            'percentage': percentage,
+          },
+        });
+      }
+    });
+
+    // 4. Cek Tren Pemasukan
+    final thisMonthIncome = transactions
+        .where(
+          (t) =>
+              t['type'] == 'income' &&
+              DateTime.parse(t['date']).month == now.month,
+        )
+        .fold(0, (sum, t) => sum + (t['amount'] as int));
+
+    final lastMonth = DateTime(now.year, now.month - 1);
+    final lastMonthIncome = transactions
+        .where(
+          (t) =>
+              t['type'] == 'income' &&
+              DateTime.parse(t['date']).month == lastMonth.month,
+        )
+        .fold(0, (sum, t) => sum + (t['amount'] as int));
+
+    if (thisMonthIncome < lastMonthIncome && lastMonthIncome > 0) {
+      final decrease = ((lastMonthIncome - thisMonthIncome) /
+              lastMonthIncome *
+              100)
+          .toStringAsFixed(1);
+      alerts.add({
+        'icon': Icons.trending_down,
+        'title': '📉 Pendapatan Menurun',
+        'color': Colors.red,
+        'description': 'Penurunan pendapatan dari bulan lalu',
+        'severity': 'high',
+        'metadata': {
+          'current_income': thisMonthIncome,
+          'last_income': lastMonthIncome,
+          'decrease_percentage': decrease,
+        },
+      });
+    }
+
+    // 5. Cek Target Tabungan
+    final targetSavings = pemasukan * 0.2; // target 20% dari pendapatan
+    final currentSavings = transactions
+        .where(
+          (t) =>
+              t['type'] == 'savings' &&
+              DateTime.parse(t['date']).month == now.month,
+        )
+        .fold(0, (sum, t) => sum + (t['amount'] as int));
+
+    if (currentSavings < targetSavings) {
+      final percentage = ((currentSavings / targetSavings) * 100)
+          .toStringAsFixed(1);
+      alerts.add({
+        'icon': Icons.savings,
+        'title': '💰 Target Menabung Belum Tercapai',
+        'color': Colors.blue,
+        'description': 'Target menabung bulan ini belum tercapai',
+        'severity': 'medium',
+        'metadata': {
+          'target_amount': targetSavings,
+          'current_savings': currentSavings,
+          'percentage': percentage,
+        },
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     // Dummy Data
-    final pemasukan = 5000000;
-    final pengeluaran = 3500000;
+
     final sisa = pemasukan - pengeluaran;
     final skor = 3.45;
     final skorPersen = (skor * 20).toInt(); // Jadi 69
@@ -69,8 +213,6 @@ class DashboardScreen extends StatelessWidget {
             : skor >= 3.1
             ? Colors.orange
             : Colors.red;
-
-    final alerts = getAlerts();
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
