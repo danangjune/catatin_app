@@ -19,13 +19,42 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   String _selectedCategory = 'Makan';
   DateTime _selectedDate = DateTime.now();
 
-  final List<String> _categories = [
-    'Makan',
-    'Transportasi',
-    'Hiburan',
-    'Belanja',
-    'Lainnya',
-  ];
+  final Map<String, List<String>> _categoryMap = {
+    'Pemasukan': [
+      'Gaji',
+      'Bonus',
+      'Investasi',
+      'Penjualan',
+      'Hadiah',
+      'Lainnya',
+    ],
+    'Pengeluaran': [
+      'Makan & Minum',
+      'Transportasi',
+      'Belanja',
+      'Hiburan',
+      'Tagihan',
+      'Kesehatan',
+      'Pendidikan',
+      'Lainnya',
+    ],
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    // Set kategori default sesuai tipe transaksi
+    _selectedCategory = _categoryMap[_selectedType]![0];
+  }
+
+  // Update kategori saat tipe transaksi berubah
+  void _updateType(String newType) {
+    setState(() {
+      _selectedType = newType;
+      // Update selected category when type changes
+      _selectedCategory = _categoryMap[newType]![0];
+    });
+  }
 
   Future<void> _pickDate() async {
     DateTime? picked = await showDatePicker(
@@ -87,7 +116,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   @override
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -121,7 +149,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               children: [
                 Expanded(
                   child: InkWell(
-                    onTap: () => setState(() => _selectedType = 'Pemasukan'),
+                    onTap: () => _updateType('Pemasukan'),
                     child: Container(
                       padding: EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
@@ -166,7 +194,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 SizedBox(width: 12),
                 Expanded(
                   child: InkWell(
-                    onTap: () => setState(() => _selectedType = 'Pengeluaran'),
+                    onTap: () => _updateType('Pengeluaran'),
                     child: Container(
                       padding: EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
@@ -302,7 +330,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           value: _selectedCategory,
                           decoration: InputDecoration(border: InputBorder.none),
                           items:
-                              _categories
+                              _categoryMap[_selectedType]!
                                   .map(
                                     (cat) => DropdownMenuItem(
                                       value: cat,

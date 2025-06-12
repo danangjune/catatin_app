@@ -383,7 +383,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    'PRO',
+                    'PRO MAX',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 10,
