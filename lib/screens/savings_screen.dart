@@ -23,55 +23,80 @@ class _SavingsScreenState extends State<SavingsScreen> {
   }
 
   Future<void> fetchCurrentMonthSaving() async {
+    setState(() => isLoading = true);
     try {
+      final now = DateTime.now();
+      final monthStr =
+          "${now.year}-${now.month.toString().padLeft(2, '0')}-01"; // Format YYYY-MM-DD
+
       final response = await http.get(
-        Uri.parse('http://localhost:8000/api/v1/savings/monthly'),
+        Uri.parse(
+          'http://localhost:8000/api/v1/savings/monthly?month=$monthStr',
+        ),
       );
 
+      print('Response status: ${response.statusCode}'); // Debug log
+      print('Response body: ${response.body}'); // Debug log
+
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data != null) {
+        final responseData = json.decode(response.body);
+
+        if (responseData != null) {
           setState(() {
-            _target = data['target_amount'] ?? 0;
-            _saved = data['saved_amount'] ?? 0;
-            _savingId = data['id'].toString();
+            _target = responseData['target_amount'] ?? 0;
+            _saved = responseData['saved_amount'] ?? 0;
+            _savingId = responseData['id'].toString();
             isLoading = false;
           });
         } else {
-          // Jika belum ada data bulan ini, buat baru
-          createNewMonthlySaving();
+          await createNewMonthlySaving();
         }
+      } else {
+        await createNewMonthlySaving();
       }
     } catch (e) {
       print('Error fetching savings: $e');
       setState(() => isLoading = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal mengambil data tabungan')));
     }
   }
 
   Future<void> createNewMonthlySaving() async {
     try {
+      final now = DateTime.now();
+      final monthStr =
+          "${now.year}-${now.month.toString().padLeft(2, '0')}-01"; // Format YYYY-MM-DD
+
       final response = await http.post(
         Uri.parse('http://localhost:8000/api/v1/savings'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'target_amount': 2000000, // Default target
+          'target_amount': 2000000,
           'saved_amount': 0,
-          'month': DateTime.now().toIso8601String(),
+          'month': monthStr,
         }),
       );
 
+      print('Create response: ${response.statusCode}'); // Debug log
+      print('Create body: ${response.body}'); // Debug log
+
       if (response.statusCode == 201) {
-        final data = json.decode(response.body);
+        final responseData = json.decode(response.body);
         setState(() {
-          _target = data['target_amount'];
-          _saved = data['saved_amount'];
-          _savingId = data['id'].toString();
+          _target = responseData['target_amount'];
+          _saved = responseData['saved_amount'];
+          _savingId = responseData['id'].toString();
           isLoading = false;
         });
       }
     } catch (e) {
       print('Error creating saving: $e');
       setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal membuat data tabungan baru')),
+      );
     }
   }
 

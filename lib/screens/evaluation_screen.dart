@@ -31,7 +31,6 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
       final now = DateTime.now();
       final monthStr = "${now.year}-${now.month.toString().padLeft(2, '0')}";
 
-      // Fetch monthly transactions evaluation
       final response = await http.get(
         Uri.parse(
           'http://localhost:8000/api/v1/transactions/evaluation?month=$monthStr',
@@ -42,31 +41,32 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
         final responseData = json.decode(response.body);
         final data = responseData['data'];
 
-        // 1. Rasio pemasukan/pengeluaran
-        final income = data['total_income'] ?? 0;
-        final expense = data['total_expense'] ?? 0;
-        final ratio = income > 0 ? expense / income : 0;
-        scores['income_ratio'] = _calculateIncomeRatio(ratio);
+        // Explicitly cast numeric values to double
+        final income =
+            (num.tryParse(data['total_income'].toString()) ?? 0).toDouble();
+        final expense =
+            (num.tryParse(data['total_expense'].toString()) ?? 0).toDouble();
+        final savingConsistency = (data['saving_consistency'] as num).toInt();
+        final unexpectedExpense =
+            (num.tryParse(data['unexpected_expense'].toString()) ?? 0)
+                .toDouble();
+        final recordDays = (data['record_days'] as num).toInt();
+        final savingPercentage =
+            (num.tryParse(data['saving_percentage'].toString()) ?? 0)
+                .toDouble();
 
-        // 2. Konsistensi menabung
-        final savingConsistency = data['saving_consistency'] ?? 0;
+        // Calculate scores with proper double values
+        final ratio = income > 0 ? expense / income : 0.0;
+        scores['income_ratio'] = _calculateIncomeRatio(ratio);
         scores['saving_consistency'] = _calculateSavingConsistency(
           savingConsistency,
         );
 
-        // 3. Pengeluaran tak terduga
-        final unexpectedExpense = data['unexpected_expense'] ?? 0;
-        final unexpectedRatio = income > 0 ? unexpectedExpense / income : 0;
+        final unexpectedRatio = income > 0 ? unexpectedExpense / income : 0.0;
         scores['unexpected_expense'] = _calculateUnexpectedExpense(
           unexpectedRatio,
         );
-
-        // 4. Frekuensi pencatatan
-        final recordDays = data['record_days'] ?? 0;
         scores['record_frequency'] = _calculateRecordFrequency(recordDays);
-
-        // 5. Persentase tabungan (dihitung dari saving_consistency)
-        final savingPercentage = income > 0 ? (savingConsistency / 4) * 20 : 0;
         scores['saving_percentage'] = _calculateSavingPercentage(
           savingPercentage,
         );
@@ -75,6 +75,12 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
       }
     } catch (e) {
       print('Error calculating scores: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengambil data evaluasi: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
       setState(() => isLoading = false);
     }
   }
@@ -172,181 +178,187 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
         ),
         iconTheme: IconThemeData(color: Colors.black87),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Score Card
-            Container(
-              width: double.infinity,
-              margin: EdgeInsets.all(16),
-              padding: EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    getCategoryColor().withOpacity(0.8),
-                    getCategoryColor(),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: getCategoryColor().withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    "Skor Keuangan Kamu",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 16,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        "$scoreFinal",
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        "/100",
-                        style: TextStyle(
-                          fontSize: 24,
-                          color: Colors.white.withOpacity(0.8),
-                        ),
-                      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              // Score Card
+              Container(
+                width: double.infinity,
+                margin: EdgeInsets.all(16),
+                padding: EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      getCategoryColor().withOpacity(0.8),
+                      getCategoryColor(),
                     ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  SizedBox(height: 16),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: getCategoryColor().withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
                     ),
-                    child: Text(
-                      category,
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      "Skor Keuangan Kamu",
                       style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                        color: Colors.white.withOpacity(0.9),
                         fontSize: 16,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Recommendation Card
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: 16),
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 10,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.lightbulb_outline, color: Colors.amber),
-                      SizedBox(width: 8),
-                      Text(
-                        "Rekomendasi",
+                    SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          "$scoreFinal",
+                          style: TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          "/100",
+                          style: TextStyle(
+                            fontSize: 24,
+                            color: Colors.white.withOpacity(0.8),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        category,
                         style: TextStyle(
-                          fontSize: 18,
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          fontSize: 16,
                         ),
                       ),
-                    ],
-                  ),
-                  SizedBox(height: 12),
-                  Text(
-                    recommendation,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.black87,
-                      height: 1.5,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
-            // Criteria Details
-            Container(
-              margin: EdgeInsets.all(16),
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 10,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Detail Kriteria",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+              // Recommendation Card
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 10,
+                      offset: Offset(0, 2),
                     ),
-                  ),
-                  SizedBox(height: 16),
-                  _buildKriteria(
-                    "Rasio Pemasukan vs Pengeluaran",
-                    scores['income_ratio']!,
-                  ),
-                  _buildKriteria(
-                    "Konsistensi Menabung",
-                    scores['saving_consistency']!,
-                  ),
-                  _buildKriteria(
-                    "Pengeluaran Tak Terduga",
-                    scores['unexpected_expense']!,
-                  ),
-                  _buildKriteria(
-                    "Frekuensi Pencatatan",
-                    scores['record_frequency']!,
-                  ),
-                  _buildKriteria(
-                    "Persentase Tabungan dari Pemasukan",
-                    scores['saving_percentage']!,
-                  ),
-                ],
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.lightbulb_outline, color: Colors.amber),
+                        SizedBox(width: 8),
+                        Text(
+                          "Rekomendasi",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      recommendation,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.black87,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+
+              // Criteria Details
+              Container(
+                margin: EdgeInsets.all(16),
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 10,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Detail Kriteria",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    _buildKriteria(
+                      "Rasio Pemasukan vs Pengeluaran",
+                      scores['income_ratio']!,
+                    ),
+                    _buildKriteria(
+                      "Konsistensi Menabung",
+                      scores['saving_consistency']!,
+                    ),
+                    _buildKriteria(
+                      "Pengeluaran Tak Terduga",
+                      scores['unexpected_expense']!,
+                    ),
+                    _buildKriteria(
+                      "Frekuensi Pencatatan",
+                      scores['record_frequency']!,
+                    ),
+                    _buildKriteria(
+                      "Persentase Tabungan dari Pemasukan",
+                      scores['saving_percentage']!,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

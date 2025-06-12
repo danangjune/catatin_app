@@ -29,6 +29,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       'Lainnya',
     ],
     'Pengeluaran': [
+      'Tak Terduga',
       'Makan & Minum',
       'Transportasi',
       'Belanja',

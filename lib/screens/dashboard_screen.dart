@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:catatin_app/utils/score_calculator.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -13,11 +14,9 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final formatCurrency = NumberFormat.currency(
-    locale: 'id_ID',
-    symbol: 'Rp ',
-    decimalDigits: 0,
-  );
+  late NumberFormat formatCurrency;
+  late DateTime now;
+  late DateFormat formatMonth;
 
   List<Map<String, dynamic>> alerts = [];
   List<dynamic> transactions = [];
@@ -31,8 +30,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    fetchTransactions();
-    fetchEvaluation();
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    try {
+      // Initialize locale first
+      await initializeDateFormatting('id_ID', null);
+
+      // Then initialize formatters
+      setState(() {
+        formatCurrency = NumberFormat.currency(
+          locale: 'id_ID',
+          symbol: 'Rp ',
+          decimalDigits: 0,
+        );
+        now = DateTime.now();
+        formatMonth = DateFormat('MMMM yyyy', 'id_ID');
+      });
+
+      // Finally fetch data
+      await fetchTransactions();
+      await fetchEvaluation();
+    } catch (e) {
+      print('Error initializing data: $e');
+      setState(() {
+        isLoading = false;
+        isEvaluationLoading = false;
+      });
+    }
   }
 
   Future<void> fetchEvaluation() async {
@@ -151,8 +177,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> fetchTransactions() async {
     try {
+      final now = DateTime.now();
+      final monthStr = "${now.year}-${now.month.toString().padLeft(2, '0')}";
+
+      // Fetch monthly transactions
       final response = await http.get(
-        Uri.parse('http://localhost:8000/api/v1/transactions'),
+        Uri.parse(
+          'http://localhost:8000/api/v1/transactions/monthly?month=$monthStr',
+        ),
       );
 
       if (response.statusCode == 200) {
@@ -161,7 +193,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         setState(() {
           transactions = responseData['data'];
 
-          // Hitung total pemasukan dan pengeluaran
+          // Hitung total pemasukan dan pengeluaran bulan ini
           pemasukan = transactions
               .where((t) => t['type'] == 'income')
               .fold(0, (sum, t) => sum + (t['amount'] as int));
@@ -383,7 +415,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    'PRO MAX',
+                    'BETA',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 10,
@@ -541,7 +573,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             SizedBox(height: 4),
                             Text(
-                              "Mei 2025",
+                              formatMonth.format(
+                                now,
+                              ), // Akan menampilkan format "Juni 2025"
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey[600],
