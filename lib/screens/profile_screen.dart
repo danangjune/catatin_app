@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import '../models/user.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -9,14 +14,44 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool dailyReminder = true;
+  bool isLoading = true;
+  User? user;
+  late NumberFormat formatCurrency;
+
+  @override
+  void initState() {
+    super.initState();
+    formatCurrency = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:8000/api/v1/user/profile'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          user = User.fromJson(data['data']);
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load user data');
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+      setState(() => isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Dummy data user
-    final String userName = "June";
-    final int totalIncome = 2000000;
-    final int totalExpense = 1200000;
-    final int savings = 500000;
-
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -37,183 +72,215 @@ class _ProfileScreenState extends State<ProfileScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        iconTheme: IconThemeData(color: Colors.black87),
+        iconTheme: IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            icon: Icon(Icons.edit_outlined),
+            icon: Icon(Icons.edit_outlined, color: Colors.white),
             onPressed: () {
               // TODO: Implement edit profile
             },
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Profile Header
-            Container(
-              padding: EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.teal.withOpacity(0.1),
-                    child: Text(
-                      userName[0],
-                      style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.teal,
+      body:
+          isLoading
+              ? Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // Profile Header
+                    Container(
+                      padding: EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(30),
+                          bottomRight: Radius.circular(30),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 50,
+                            backgroundColor: Colors.teal.withOpacity(0.1),
+                            child: ClipOval(
+                              child: CachedNetworkImage(
+                                imageUrl:
+                                    'https://api.dicebear.com/7.x/pixel-art/svg?seed=${user?.name ?? "user"}',
+                                placeholder:
+                                    (context, url) => Text(
+                                      user?.name
+                                              .substring(0, 1)
+                                              .toUpperCase() ??
+                                          '',
+                                      style: TextStyle(
+                                        fontSize: 36,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.teal,
+                                      ),
+                                    ),
+                                errorWidget:
+                                    (context, url, error) => Text(
+                                      user?.name
+                                              .substring(0, 1)
+                                              .toUpperCase() ??
+                                          '',
+                                      style: TextStyle(
+                                        fontSize: 36,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.teal,
+                                      ),
+                                    ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            "Halo, ${user?.name ?? ''} 👋",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            user?.email ?? '',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    "Halo, $userName 👋",
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    "Selamat datang di CatatIn!",
-                    style: TextStyle(color: Colors.grey[600], fontSize: 16),
-                  ),
-                ],
-              ),
-            ),
 
-            // Financial Summary
-            Container(
-              margin: EdgeInsets.all(16),
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 10,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Ringkasan Keuangan Bulan Ini",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                    // Financial Summary
+                    Container(
+                      margin: EdgeInsets.all(16),
+                      padding: EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 10,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Ringkasan Keuangan Bulan Ini",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                          _buildFinancialItem(
+                            "Total Pemasukan",
+                            user?.monthlyStats['income'] ?? 0,
+                            Icons.arrow_upward,
+                            Colors.green,
+                          ),
+                          Divider(height: 24),
+                          _buildFinancialItem(
+                            "Total Pengeluaran",
+                            user?.monthlyStats['expense'] ?? 0,
+                            Icons.arrow_downward,
+                            Colors.red,
+                          ),
+                          Divider(height: 24),
+                          _buildFinancialItem(
+                            "Total Tabungan",
+                            user?.monthlyStats['savings'] ?? 0,
+                            Icons.savings_outlined,
+                            Colors.blue,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 20),
-                  _buildFinancialItem(
-                    "Total Pemasukan",
-                    totalIncome,
-                    Icons.arrow_upward,
-                    Colors.green,
-                  ),
-                  Divider(height: 24),
-                  _buildFinancialItem(
-                    "Total Pengeluaran",
-                    totalExpense,
-                    Icons.arrow_downward,
-                    Colors.red,
-                  ),
-                  Divider(height: 24),
-                  _buildFinancialItem(
-                    "Total Tabungan",
-                    savings,
-                    Icons.savings_outlined,
-                    Colors.blue,
-                  ),
-                ],
-              ),
-            ),
 
-            // Settings Section
-            Container(
-              margin: EdgeInsets.all(16),
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 10,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Pengaturan",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                    // Settings Section
+                    Container(
+                      margin: EdgeInsets.all(16),
+                      padding: EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 10,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Pengaturan",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          _buildSettingItem(
+                            "Pengingat Harian",
+                            Icons.notifications_outlined,
+                            Switch(
+                              value: dailyReminder,
+                              onChanged:
+                                  (val) => setState(() => dailyReminder = val),
+                              activeColor: Colors.teal,
+                            ),
+                          ),
+                          _buildSettingItem(
+                            "Tema Aplikasi",
+                            Icons.palette_outlined,
+                            Icon(Icons.chevron_right, color: Colors.grey),
+                          ),
+                          _buildSettingItem(
+                            "Bantuan",
+                            Icons.help_outline,
+                            Icon(Icons.chevron_right, color: Colors.grey),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 16),
-                  _buildSettingItem(
-                    "Pengingat Harian",
-                    Icons.notifications_outlined,
-                    Switch(
-                      value: dailyReminder,
-                      onChanged: (val) => setState(() => dailyReminder = val),
-                      activeColor: Colors.teal,
-                    ),
-                  ),
-                  _buildSettingItem(
-                    "Tema Aplikasi",
-                    Icons.palette_outlined,
-                    Icon(Icons.chevron_right, color: Colors.grey),
-                  ),
-                  _buildSettingItem(
-                    "Bantuan",
-                    Icons.help_outline,
-                    Icon(Icons.chevron_right, color: Colors.grey),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
   Widget _buildFinancialItem(
     String label,
-    int amount,
+    dynamic amount, // Change type to dynamic
     IconData icon,
     Color color,
   ) {
+    // Convert amount to int
+    final int value = amount is String ? int.parse(amount) : amount as int;
+
     return Row(
       children: [
         Container(
@@ -235,7 +302,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               SizedBox(height: 4),
               Text(
-                "Rp $amount",
+                formatCurrency.format(value),
                 style: TextStyle(
                   color: color,
                   fontWeight: FontWeight.bold,
