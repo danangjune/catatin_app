@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:catatin_app/utils/score_calculator.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import '../services/auth_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -14,9 +15,13 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  late NumberFormat formatCurrency;
-  late DateTime now;
-  late DateFormat formatMonth;
+  NumberFormat formatCurrency = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
+  DateTime now = DateTime.now();
+  DateFormat formatMonth = DateFormat('MMMM yyyy');
 
   List<Map<String, dynamic>> alerts = [];
   List<dynamic> transactions = [];
@@ -30,15 +35,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeData();
+
+    initializeDateFormatting('id_ID', null).then((_) {
+      if (mounted) {
+        setState(() {
+          formatMonth = DateFormat(
+            'MMMM yyyy',
+            'id_ID',
+          ); // Update with proper locale
+        });
+        _initializeData(); // Move data fetching here after locale is initialized
+      }
+    });
   }
 
   Future<void> _initializeData() async {
     try {
-      // Initialize locale first
       await initializeDateFormatting('id_ID', null);
 
-      // Then initialize formatters
       setState(() {
         formatCurrency = NumberFormat.currency(
           locale: 'id_ID',
@@ -49,7 +63,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         formatMonth = DateFormat('MMMM yyyy', 'id_ID');
       });
 
-      // Finally fetch data
       await fetchTransactions();
       await fetchEvaluation();
     } catch (e) {
@@ -66,22 +79,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final now = DateTime.now();
       final monthStr = "${now.year}-${now.month.toString().padLeft(2, '0')}";
 
-      final response = await http.get(
-        Uri.parse(
-          'http://localhost:8000/api/v1/transactions/evaluation?month=$monthStr',
-        ),
+      final response = await AuthService.authenticatedGet(
+        '/api/v1/transactions/evaluation?month=$monthStr',
       );
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final data = responseData['data'];
 
-        // 1. Rasio pemasukan/pengeluaran
         final income = data['total_income'] ?? 0;
         final expense = data['total_expense'] ?? 0;
         final ratio = income > 0 ? expense / income : 0;
 
-        // Hitung scores dengan cara yang sama seperti di EvaluationScreen
         final scores = {
           'income_ratio': _calculateIncomeRatio(ratio),
           'saving_consistency': _calculateSavingConsistency(
@@ -98,7 +107,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         };
 
-        // Calculate weighted score
         final rawScore = ScoreCalculator.calculateFinalScore(scores);
 
         setState(() {
@@ -113,44 +121,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  // Update scoring methods to match EvaluationScreen
   double _calculateIncomeRatio(double ratio) {
-    if (ratio <= 0.5) return 5; // Pengeluaran <= 50% pemasukan
-    if (ratio <= 0.7) return 4; // Pengeluaran <= 70% pemasukan
-    if (ratio <= 0.9) return 3; // Pengeluaran <= 90% pemasukan
-    if (ratio <= 1.0) return 2; // Pengeluaran <= 100% pemasukan
-    return 1; // Pengeluaran > 100% pemasukan
+    if (ratio <= 0.5) return 5;
+    if (ratio <= 0.7) return 4;
+    if (ratio <= 0.9) return 3;
+    if (ratio <= 1.0) return 2;
+    return 1;
   }
 
   double _calculateSavingConsistency(int consistency) {
-    if (consistency >= 4) return 5; // Menabung >= 4 minggu
-    if (consistency >= 3) return 4; // Menabung 3 minggu
-    if (consistency >= 2) return 3; // Menabung 2 minggu
-    if (consistency >= 1) return 2; // Menabung 1 minggu
-    return 1; // Tidak menabung
+    if (consistency >= 4) return 5;
+    if (consistency >= 3) return 4;
+    if (consistency >= 2) return 3;
+    if (consistency >= 1) return 2;
+    return 1;
   }
 
   double _calculateUnexpectedExpense(double ratio) {
-    if (ratio <= 0.05) return 5; // Pengeluaran tak terduga <= 5% pemasukan
-    if (ratio <= 0.10) return 4; // <= 10%
-    if (ratio <= 0.15) return 3; // <= 15%
-    if (ratio <= 0.20) return 2; // <= 20%
-    return 1; // > 20%
+    if (ratio <= 0.05) return 5;
+    if (ratio <= 0.10) return 4;
+    if (ratio <= 0.15) return 3;
+    if (ratio <= 0.20) return 2;
+    return 1;
   }
 
   double _calculateRecordFrequency(int days) {
-    if (days >= 25) return 5; // Mencatat >= 25 hari
-    if (days >= 20) return 4; // >= 20 hari
-    if (days >= 15) return 3; // >= 15 hari
-    if (days >= 10) return 2; // >= 10 hari
-    return 1; // < 10 hari
+    if (days >= 25) return 5;
+    if (days >= 20) return 4;
+    if (days >= 15) return 3;
+    if (days >= 10) return 2;
+    return 1;
   }
 
   double _calculateSavingPercentage(double percentage) {
-    if (percentage >= 20) return 5; // >= 20%
-    if (percentage >= 10) return 4; // 10-20%
-    if (percentage > 0) return 2; // < 10% tapi > 0
-    return 1; // 0%
+    if (percentage >= 20) return 5;
+    if (percentage >= 10) return 4;
+    if (percentage > 0) return 2;
+    return 1;
   }
 
   String _getCategory(double score) {
@@ -180,11 +187,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final now = DateTime.now();
       final monthStr = "${now.year}-${now.month.toString().padLeft(2, '0')}";
 
-      // Fetch monthly transactions
-      final response = await http.get(
-        Uri.parse(
-          'http://localhost:8000/api/v1/transactions/monthly?month=$monthStr',
-        ),
+      final response = await AuthService.authenticatedGet(
+        '/api/v1/transactions/monthly?month=$monthStr',
       );
 
       if (response.statusCode == 200) {
@@ -193,7 +197,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         setState(() {
           transactions = responseData['data'];
 
-          // Hitung total pemasukan dan pengeluaran bulan ini
           pemasukan = transactions
               .where((t) => t['type'] == 'income')
               .fold(0, (sum, t) => sum + (t['amount'] as int));
@@ -202,7 +205,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               .where((t) => t['type'] == 'expense')
               .fold(0, (sum, t) => sum + (t['amount'] as int));
 
-          // Generate alerts berdasarkan data transaksi
           generateAlerts();
           isLoading = false;
         });

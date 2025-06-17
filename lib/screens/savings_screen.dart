@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../services/auth_service.dart';
 
 class SavingsScreen extends StatefulWidget {
   const SavingsScreen({Key? key}) : super(key: key);
@@ -25,18 +26,22 @@ class _SavingsScreenState extends State<SavingsScreen> {
   Future<void> fetchCurrentMonthSaving() async {
     setState(() => isLoading = true);
     try {
+      final token = await AuthService.getToken();
       final now = DateTime.now();
-      final monthStr =
-          "${now.year}-${now.month.toString().padLeft(2, '0')}-01"; // Format YYYY-MM-DD
+      final monthStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-01";
 
       final response = await http.get(
         Uri.parse(
           'http://localhost:8000/api/v1/savings/monthly?month=$monthStr',
         ),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
       );
 
-      print('Response status: ${response.statusCode}'); // Debug log
-      print('Response body: ${response.body}'); // Debug log
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
@@ -65,13 +70,17 @@ class _SavingsScreenState extends State<SavingsScreen> {
 
   Future<void> createNewMonthlySaving() async {
     try {
+      final token = await AuthService.getToken();
       final now = DateTime.now();
-      final monthStr =
-          "${now.year}-${now.month.toString().padLeft(2, '0')}-01"; // Format YYYY-MM-DD
+      final monthStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-01";
 
       final response = await http.post(
         Uri.parse('http://localhost:8000/api/v1/savings'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
         body: json.encode({
           'target_amount': 2000000,
           'saved_amount': 0,
@@ -79,8 +88,8 @@ class _SavingsScreenState extends State<SavingsScreen> {
         }),
       );
 
-      print('Create response: ${response.statusCode}'); // Debug log
-      print('Create body: ${response.body}'); // Debug log
+      print('Create response: ${response.statusCode}');
+      print('Create body: ${response.body}');
 
       if (response.statusCode == 201) {
         final responseData = json.decode(response.body);
@@ -107,9 +116,15 @@ class _SavingsScreenState extends State<SavingsScreen> {
       final newTarget = int.tryParse(_targetController.text);
       if (newTarget == null) return;
 
+      final token = await AuthService.getToken();
+
       final response = await http.patch(
         Uri.parse('http://localhost:8000/api/v1/savings/$_savingId'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
         body: json.encode({'target_amount': newTarget}),
       );
 
@@ -175,11 +190,17 @@ class _SavingsScreenState extends State<SavingsScreen> {
                 final tambah = int.tryParse(controller.text);
                 if (tambah != null && _savingId != null) {
                   try {
+                    final token = await AuthService.getToken();
+
                     final response = await http.patch(
                       Uri.parse(
                         'http://localhost:8000/api/v1/savings/$_savingId',
                       ),
-                      headers: {'Content-Type': 'application/json'},
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer $token',
+                        'Accept': 'application/json',
+                      },
                       body: json.encode({'add_amount': tambah}),
                     );
 

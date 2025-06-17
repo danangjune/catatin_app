@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:catatin_app/utils/score_calculator.dart';
+import '../services/auth_service.dart';
 
 class EvaluationScreen extends StatefulWidget {
   const EvaluationScreen({Key? key}) : super(key: key);
@@ -28,6 +29,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
 
   Future<void> calculateScores() async {
     try {
+      final token = await AuthService.getToken();
       final now = DateTime.now();
       final monthStr = "${now.year}-${now.month.toString().padLeft(2, '0')}";
 
@@ -35,13 +37,16 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
         Uri.parse(
           'http://localhost:8000/api/v1/transactions/evaluation?month=$monthStr',
         ),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
       );
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final data = responseData['data'];
 
-        // Explicitly cast numeric values to double
         final income =
             (num.tryParse(data['total_income'].toString()) ?? 0).toDouble();
         final expense =
@@ -55,7 +60,6 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
             (num.tryParse(data['saving_percentage'].toString()) ?? 0)
                 .toDouble();
 
-        // Calculate scores with proper double values
         final ratio = income > 0 ? expense / income : 0.0;
         scores['income_ratio'] = _calculateIncomeRatio(ratio);
         scores['saving_consistency'] = _calculateSavingConsistency(
@@ -72,6 +76,8 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
         );
 
         setState(() => isLoading = false);
+      } else {
+        throw Exception('Gagal mengambil data evaluasi');
       }
     } catch (e) {
       print('Error calculating scores: $e');

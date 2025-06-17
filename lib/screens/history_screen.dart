@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import '../services/auth_service.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({Key? key}) : super(key: key);
@@ -57,8 +58,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Future<void> fetchTransactions() async {
     try {
+      final token = await AuthService.getToken();
+
       final response = await http.get(
         Uri.parse('http://localhost:8000/api/v1/transactions'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
       );
 
       if (response.statusCode == 200) {
@@ -66,7 +73,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
         final List<dynamic> data = responseData['data'];
 
         setState(() {
-          // Convert backend data format to match our UI format
           transactions =
               data
                   .map(
@@ -82,6 +88,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   .toList();
           isLoading = false;
         });
+      } else {
+        throw Exception('Gagal mengambil data transaksi');
       }
     } catch (e) {
       print('Error fetching transactions: $e');

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../services/auth_service.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({Key? key}) : super(key: key);
@@ -75,24 +76,27 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     if (_formKey.currentState!.validate()) {
       final url = Uri.parse('http://localhost:8000/api/v1/transactions');
 
-      // Mapping tipe
       final String backendType =
           _selectedType == 'Pemasukan' ? 'income' : 'expense';
 
       final body = {
         'type': backendType,
-        'category':
-            _selectedCategory
-                .toLowerCase(), // optional: lowercase biar konsisten
+        'category': _selectedCategory.toLowerCase(),
         'amount': _amountController.text,
         'description': _descController.text,
-        'date': _selectedDate.toIso8601String().substring(0, 10), // yyyy-mm-dd
+        'date': _selectedDate.toIso8601String().substring(0, 10),
       };
 
       try {
+        final token = await AuthService.getToken();
+
         final response = await http.post(
           url,
-          headers: {'Content-Type': 'application/json'},
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
           body: jsonEncode(body),
         );
 

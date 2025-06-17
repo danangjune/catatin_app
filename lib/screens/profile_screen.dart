@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import '../models/user.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../services/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -29,10 +30,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _fetchUserData();
   }
 
+  void handleLogout() async {
+    await AuthService.logout();
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+  }
+
   Future<void> _fetchUserData() async {
     try {
+      final token = await AuthService.getToken();
+
       final response = await http.get(
         Uri.parse('http://localhost:8000/api/v1/user/profile'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
       );
 
       if (response.statusCode == 200) {
@@ -262,6 +275,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             "Bantuan",
                             Icons.help_outline,
                             Icon(Icons.chevron_right, color: Colors.grey),
+                          ),
+                          Divider(height: 32),
+                          GestureDetector(
+                            onTap: handleLogout,
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(Icons.logout, color: Colors.red),
+                                ),
+                                SizedBox(width: 16),
+                                Expanded(
+                                  child: Text(
+                                    "Keluar",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                Icon(Icons.chevron_right, color: Colors.red),
+                              ],
+                            ),
                           ),
                         ],
                       ),

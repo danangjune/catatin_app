@@ -5,6 +5,9 @@ import 'screens/savings_screen.dart';
 import 'screens/evaluation_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
   runApp(CatatInApp());
@@ -16,8 +19,11 @@ class CatatInApp extends StatelessWidget {
     return MaterialApp(
       title: 'CatatIn',
       theme: ThemeData(primarySwatch: Colors.teal),
-      initialRoute: '/',
+      initialRoute: '/splash',
       routes: {
+        '/splash': (context) => SplashScreen(),
+        '/login': (context) => LoginScreen(),
+        '/register': (context) => RegisterScreen(),
         '/': (context) => DashboardScreen(),
         '/add': (context) => AddTransactionScreen(),
         '/savings': (context) => SavingsScreen(),
