@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'alert_screen.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:catatin_app/utils/score_calculator.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -17,9 +16,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  static const Color primaryGradientStart = Color(0xFFFF8C48); // Orange
-  static const Color primaryGradientEnd = Color(0xFFFF4880); // Pink
-  int _selectedIndex = 0;
   NumberFormat formatCurrency = NumberFormat.currency(
     locale: 'id_ID',
     symbol: 'Rp ',
@@ -124,7 +120,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         // Calculate final score
         final scoreRaw = ScoreCalculator.calculateFinalScore(scores);
-        final scoreFinal = (scoreRaw * 20).toInt();
 
         setState(() {
           evaluationScore = scoreRaw;
@@ -249,11 +244,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void generateAlerts() {
     alerts.clear();
     final now = DateTime.now();
-    final formatCurrency = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
-      decimalDigits: 0,
-    );
 
     // 1. Cek Defisit
     if (pengeluaran > pemasukan) {
