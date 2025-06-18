@@ -45,12 +45,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     initializeDateFormatting('id_ID', null).then((_) {
       if (mounted) {
         setState(() {
-          formatMonth = DateFormat(
-            'MMMM yyyy',
-            'id_ID',
-          ); // Update with proper locale
+          formatMonth = DateFormat('MMMM yyyy', 'id_ID');
         });
-        _initializeData(); // Move data fetching here after locale is initialized
+        _initializeData();
       }
     });
   }
@@ -140,17 +137,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  // Update method di dashboard_screen.dart
   double _calculateIncomeRatio(double ratio) {
     if (ratio <= 0.5) return 5;
     if (ratio <= 0.7) return 4;
-    if (ratio <= 0.9) return 3; // Changed to 0.9
+    if (ratio <= 0.9) return 3;
     if (ratio <= 1.0) return 2;
     return 1;
   }
 
   double _calculateSavingConsistency(int consistency) {
-    if (consistency >= 4) return 5; // Changed to match evaluation
+    if (consistency >= 4) return 5;
     if (consistency >= 3) return 4;
     if (consistency >= 2) return 3;
     if (consistency >= 1) return 2;
@@ -181,7 +177,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return 1;
   }
 
-  // Update getCategory method to match evaluation screen
   String getCategory(double score) {
     if (score >= 4.1) return "Sangat Baik 😊";
     if (score >= 3.1) return "Baik 😊";
