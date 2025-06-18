@@ -15,7 +15,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void handleLogin() async {
     if (emailCtrl.text.isEmpty || passCtrl.text.isEmpty) {
-      setState(() => errorMsg = 'Email dan password harus diisi');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Email dan password harus diisi'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
       return;
     }
 
@@ -24,9 +29,15 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => loading = false);
 
     if (success) {
+      await Future.delayed(Duration(milliseconds: 300));
       Navigator.pushReplacementNamed(context, '/');
     } else {
-      setState(() => errorMsg = 'Login gagal. Cek email/password.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Login gagal. Cek email/password.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     }
   }
 

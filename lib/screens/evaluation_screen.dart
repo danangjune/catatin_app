@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:catatin_app/utils/score_calculator.dart';
 import '../services/auth_service.dart';
 import '../widgets/bottom_nav.dart';
+import 'package:percent_indicator/circular_percent_indicator.dart';
 
 class EvaluationScreen extends StatefulWidget {
   const EvaluationScreen({Key? key}) : super(key: key);
@@ -21,6 +22,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
     'record_frequency': 0,
     'saving_percentage': 0,
   };
+  List<String> insights = [];
 
   @override
   void initState() {
@@ -77,6 +79,13 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
         );
 
         setState(() => isLoading = false);
+
+        insights = [
+          "📅 Kamu mencatat transaksi selama $recordDays hari bulan ini.",
+          "💰 Menabung selama $savingConsistency minggu.",
+          "📉 Pengeluaran tak terduga sebesar ${unexpectedExpense.toInt()} (${(unexpectedExpense / income * 100).toStringAsFixed(1)}%).",
+          "🏦 Menabung sebesar ${savingPercentage.toStringAsFixed(1)}% dari pemasukan.",
+        ];
       } else {
         throw Exception('Gagal mengambil data evaluasi');
       }
@@ -227,26 +236,22 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                         ),
                       ),
                       SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            "$scoreFinal",
-                            style: TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                      CircularPercentIndicator(
+                        radius: 80.0,
+                        lineWidth: 13.0,
+                        animation: true,
+                        percent: (scoreFinal / 100).clamp(0.0, 1.0),
+                        center: Text(
+                          "$scoreFinal/100",
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
-                          Text(
-                            "/100",
-                            style: TextStyle(
-                              fontSize: 24,
-                              color: Colors.white.withOpacity(0.8),
-                            ),
-                          ),
-                        ],
+                        ),
+                        circularStrokeCap: CircularStrokeCap.round,
+                        progressColor: Colors.white,
+                        backgroundColor: Colors.white.withOpacity(0.2),
                       ),
                       SizedBox(height: 16),
                       Container(
@@ -270,6 +275,64 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                     ],
                   ),
                 ),
+
+                if (insights.isNotEmpty)
+                  Container(
+                    margin: EdgeInsets.all(16),
+                    padding: EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          spreadRadius: 1,
+                          blurRadius: 10,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.insights_outlined, color: Colors.indigo),
+                            SizedBox(width: 8),
+                            Text(
+                              "Insight Bulan Ini",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 12),
+                        ...insights.map(
+                          (i) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("• ", style: TextStyle(fontSize: 16)),
+                                Expanded(
+                                  child: Text(
+                                    i,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
                 // Recommendation Card
                 Container(
@@ -348,22 +411,32 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                       _buildKriteria(
                         "Rasio Pemasukan vs Pengeluaran",
                         scores['income_ratio']!,
+                        Icons.bar_chart,
+                        "Seberapa besar pengeluaran dibanding pemasukan.",
                       ),
                       _buildKriteria(
                         "Konsistensi Menabung",
                         scores['saving_consistency']!,
+                        Icons.savings,
+                        "Jumlah minggu kamu menabung bulan ini.",
                       ),
                       _buildKriteria(
                         "Pengeluaran Tak Terduga",
                         scores['unexpected_expense']!,
+                        Icons.warning_amber_outlined,
+                        "Persentase pengeluaran tak direncanakan.",
                       ),
                       _buildKriteria(
                         "Frekuensi Pencatatan",
                         scores['record_frequency']!,
+                        Icons.edit_calendar_outlined,
+                        "Berapa hari kamu mencatat keuangan.",
                       ),
                       _buildKriteria(
-                        "Persentase Tabungan dari Pemasukan",
+                        "Persentase Tabungan",
                         scores['saving_percentage']!,
+                        Icons.pie_chart_outline,
+                        "Berapa persen pemasukan yang kamu tabung.",
                       ),
                     ],
                   ),
@@ -393,7 +466,12 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
     );
   }
 
-  Widget _buildKriteria(String label, double nilai) {
+  Widget _buildKriteria(
+    String label,
+    double nilai,
+    IconData icon,
+    String tooltip,
+  ) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
@@ -405,14 +483,20 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Icon(icon, size: 20, color: Colors.teal),
+              SizedBox(width: 8),
               Expanded(
                 child: Text(
                   label,
                   style: TextStyle(fontSize: 14, color: Colors.black87),
                 ),
               ),
+              Tooltip(
+                message: tooltip,
+                child: Icon(Icons.info_outline, size: 18, color: Colors.grey),
+              ),
+              SizedBox(width: 8),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(

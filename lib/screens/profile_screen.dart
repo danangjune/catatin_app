@@ -278,7 +278,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           Divider(height: 32),
                           GestureDetector(
-                            onTap: handleLogout,
+                            onTap: () async {
+                              final shouldLogout = await showDialog<bool>(
+                                context: context,
+                                builder:
+                                    (_) => AlertDialog(
+                                      title: Text("Keluar dari akun? 😢"),
+                                      content: Text(
+                                        "Kamu yakin ingin logout dari aplikasi?",
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed:
+                                              () =>
+                                                  Navigator.pop(context, false),
+                                          child: Text("Batal"),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed:
+                                              () =>
+                                                  Navigator.pop(context, true),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red,
+                                          ),
+                                          child: Text("Keluar"),
+                                        ),
+                                      ],
+                                    ),
+                              );
+
+                              if (shouldLogout ?? false) handleLogout();
+                            },
                             child: Row(
                               children: [
                                 Container(
@@ -342,13 +372,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(color: Colors.grey[600], fontSize: 14),
               ),
               SizedBox(height: 4),
-              Text(
-                formatCurrency.format(value),
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
+              TweenAnimationBuilder<int>(
+                tween: IntTween(begin: 0, end: value),
+                duration: Duration(milliseconds: 800),
+                builder: (context, val, _) {
+                  return Text(
+                    formatCurrency.format(val),
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  );
+                },
               ),
             ],
           ),
