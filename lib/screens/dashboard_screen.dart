@@ -389,24 +389,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
         ),
-        leading: Container(
-          margin: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Icon(
-            Icons.account_balance_wallet_rounded,
-            color: Colors.white,
-            size: 20,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
+          child: Image.asset(
+            'assets/images/catatin logo.png',
+            width: 32, // Lebih besar biar seimbang dengan teks
+            height: 32,
+            fit: BoxFit.contain,
           ),
         ),
         title: Column(

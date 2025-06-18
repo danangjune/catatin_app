@@ -28,10 +28,10 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
 
     _slideAnimation = Tween<double>(
       begin: 50.0,
@@ -75,7 +75,7 @@ class _SplashScreenState extends State<SplashScreen>
         child: SafeArea(
           child: Stack(
             children: [
-              // Animated Background Circles
+              // Background Circles
               Positioned(
                 top: -100,
                 right: -100,
@@ -124,83 +124,111 @@ class _SplashScreenState extends State<SplashScreen>
                   builder: (context, child) {
                     return Transform.translate(
                       offset: Offset(0, _slideAnimation.value),
-                      child: Opacity(
-                        opacity: _fadeAnimation.value,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // Logo Container
-                            Container(
-                              padding: EdgeInsets.all(10),
-                              child: Lottie.asset(
-                                'assets/animations/wallet.json',
-                                width: 200,
-                                height: 200,
-                              ),
-                            ),
-                            SizedBox(height: 10),
-
-                            // App Name with Custom Font
-                            Text(
-                              'CatatIn',
-                              style: GoogleFonts.poppins(
-                                fontSize: 42,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: 2,
-                              ),
-                            ),
-                            SizedBox(height: 16),
-
-                            // Tagline with Glass Effect
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(
-                                  sigmaX: 10,
-                                  sigmaY: 10,
-                                ),
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.2),
+                      child: Transform.scale(
+                        scale: 0.95 + (_fadeAnimation.value * 0.05),
+                        child: Opacity(
+                          opacity: _fadeAnimation.value,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // LOGO + GLOW + AURA
+                              Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Container(
+                                    width: 180,
+                                    height: 180,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.white.withOpacity(0.06),
                                     ),
                                   ),
-                                  child: Text(
-                                    'Catat Keuanganmu dengan Mudah',
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
+                                  Container(
+                                    padding: EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.white.withOpacity(0.25),
+                                          blurRadius: 25,
+                                          spreadRadius: 3,
+                                          offset: Offset(0, 10),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Lottie.asset(
+                                      'assets/animations/wallet.json',
+                                      width: 200,
+                                      height: 200,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              SizedBox(height: 10),
+
+                              // APP NAME
+                              Text(
+                                'CatatIn',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 42,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                              SizedBox(height: 16),
+
+                              // TAGLINE
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(
+                                    sigmaX: 10,
+                                    sigmaY: 10,
+                                  ),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: Colors.white.withOpacity(0.2),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Catatan Keuangan Cerdas, Setiap Hari',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                            SizedBox(height: 48),
+                              SizedBox(height: 48),
 
-                            // Custom Loading Indicator
-                            Container(
-                              width: 160,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                color: Colors.white.withOpacity(0.2),
-                              ),
-                              child: LinearProgressIndicator(
-                                backgroundColor: Colors.transparent,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+                              // PROGRESS BAR (tetap kamu punya)
+                              Container(
+                                width: 160,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: Colors.white.withOpacity(0.2),
+                                ),
+                                child: LinearProgressIndicator(
+                                  backgroundColor: Colors.transparent,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     );

@@ -55,24 +55,38 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        padding: EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 20,
-                              offset: Offset(0, 10),
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Lingkaran glow semi-transparan
+                          Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withOpacity(
+                                0.15,
+                              ), // Halus dan nyatu
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.white.withOpacity(0.3),
+                                  blurRadius: 40,
+                                  spreadRadius: 10,
+                                  offset: Offset(0, 8),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.account_balance_wallet,
-                          size: 50,
-                          color: Color(0xFF20BF55),
-                        ),
+                          ),
+                          // Logo PNG
+                          Container(
+                            padding: EdgeInsets.all(20),
+                            child: Image.asset(
+                              'assets/images/catatin logo.png',
+                              width: 90,
+                              height: 90,
+                            ),
+                          ),
+                        ],
                       ),
                       SizedBox(height: 24),
                       Text(
@@ -86,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'Catat Keuanganmu dengan Mudah',
+                        'Catatan Keuangan Cerdas, Setiap Hari',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.9),
                           fontSize: 16,
