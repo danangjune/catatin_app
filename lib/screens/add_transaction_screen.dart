@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../services/auth_service.dart';
+import '../widgets/bottom_nav.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({Key? key}) : super(key: key);
@@ -262,7 +263,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 ],
               ),
               child: SingleChildScrollView(
-                padding: EdgeInsets.all(24),
+                padding: EdgeInsets.only(
+                  left: 24,
+                  right: 24,
+                  top: 24,
+                  bottom: 100, // Increased padding for bottom nav
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -420,6 +426,31 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                         ),
                       ),
+
+                      // Add Submit Button here at the end of the form
+                      SizedBox(height: 32),
+                      Container(
+                        width: double.infinity,
+                        margin: EdgeInsets.only(bottom: 16),
+                        child: ElevatedButton(
+                          onPressed: _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF20BF55),
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            "Simpan Transaksi",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -428,38 +459,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 10,
-              offset: Offset(0, -5),
-            ),
-          ],
-        ),
-        child: ElevatedButton(
-          onPressed: _submit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.teal,
-            padding: EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: Text(
-            "Simpan Transaksi",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
+      floatingActionButton: Container(
+        height: 65,
+        width: 65,
+        margin: EdgeInsets.only(bottom: 15),
+        child: FloatingActionButton(
+          onPressed: () => Navigator.pushNamed(context, '/add'),
+          backgroundColor: Color(0xFF20BF55),
+          elevation: 4,
+          child: Icon(Icons.add_rounded, color: Colors.white, size: 32),
         ),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: CustomBottomNav(currentIndex: -1),
     );
   }
 }

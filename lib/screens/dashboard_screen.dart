@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:catatin_app/utils/score_calculator.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../services/auth_service.dart';
+import '../widgets/bottom_nav.dart';
+import '../widgets/sparkline_painter.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -15,6 +17,9 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  static const Color primaryGradientStart = Color(0xFFFF8C48); // Orange
+  static const Color primaryGradientEnd = Color(0xFFFF4880); // Pink
+  int _selectedIndex = 0;
   NumberFormat formatCurrency = NumberFormat.currency(
     locale: 'id_ID',
     symbol: 'Rp ',
@@ -31,6 +36,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   double evaluationScore = 0.0;
   String evaluationCategory = "Memuat...";
   bool isEvaluationLoading = true;
+  double incomeExpenseRatio = 0;
+  int savingConsistency = 0;
+  double unexpectedExpenseRatio = 0;
+  int recordingDays = 0;
+  double savingPercentage = 0;
 
   @override
   void initState() {
@@ -87,32 +97,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final responseData = json.decode(response.body);
         final data = responseData['data'];
 
-        final income = data['total_income'] ?? 0;
-        final expense = data['total_expense'] ?? 0;
-        final ratio = income > 0 ? expense / income : 0;
+        // Calculate scores using evaluation criteria
+        double incomeRatio =
+            data['total_income'] > 0
+                ? data['total_expense'] / data['total_income']
+                : 0.0;
 
-        final scores = {
-          'income_ratio': _calculateIncomeRatio(ratio),
+        double unexpectedRatio =
+            data['total_income'] > 0
+                ? (data['unexpected_expense'] ?? 0) / data['total_income']
+                : 0.0;
+
+        Map<String, double> scores = {
+          'income_ratio': _calculateIncomeRatio(incomeRatio),
           'saving_consistency': _calculateSavingConsistency(
             data['saving_consistency'] ?? 0,
           ),
-          'unexpected_expense': _calculateUnexpectedExpense(
-            income > 0 ? (data['unexpected_expense'] ?? 0) / income : 0,
-          ),
+          'unexpected_expense': _calculateUnexpectedExpense(unexpectedRatio),
           'record_frequency': _calculateRecordFrequency(
             data['record_days'] ?? 0,
           ),
           'saving_percentage': _calculateSavingPercentage(
-            income > 0 ? ((data['saving_consistency'] ?? 0) / 4) * 20 : 0,
+            data['saving_percentage'] ?? 0,
           ),
         };
 
-        final rawScore = ScoreCalculator.calculateFinalScore(scores);
+        // Calculate final score
+        final scoreRaw = ScoreCalculator.calculateFinalScore(scores);
+        final scoreFinal = (scoreRaw * 20).toInt();
 
         setState(() {
-          evaluationScore = rawScore;
-          evaluationCategory = _getCategory(rawScore);
+          evaluationScore = scoreRaw;
+          evaluationCategory = getCategory(scoreRaw);
           isEvaluationLoading = false;
+
+          // Update financial health variables
+          incomeExpenseRatio = incomeRatio;
+          savingConsistency = data['saving_consistency'] ?? 0;
+          unexpectedExpenseRatio = unexpectedRatio;
+          recordingDays = data['record_days'] ?? 0;
+          savingPercentage = data['saving_percentage'] ?? 0;
         });
       }
     } catch (e) {
@@ -121,16 +145,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  // Update method di dashboard_screen.dart
   double _calculateIncomeRatio(double ratio) {
     if (ratio <= 0.5) return 5;
     if (ratio <= 0.7) return 4;
-    if (ratio <= 0.9) return 3;
+    if (ratio <= 0.9) return 3; // Changed to 0.9
     if (ratio <= 1.0) return 2;
     return 1;
   }
 
   double _calculateSavingConsistency(int consistency) {
-    if (consistency >= 4) return 5;
+    if (consistency >= 4) return 5; // Changed to match evaluation
     if (consistency >= 3) return 4;
     if (consistency >= 2) return 3;
     if (consistency >= 1) return 2;
@@ -155,15 +180,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   double _calculateSavingPercentage(double percentage) {
     if (percentage >= 20) return 5;
-    if (percentage >= 10) return 4;
-    if (percentage > 0) return 2;
+    if (percentage >= 15) return 4;
+    if (percentage >= 10) return 3;
+    if (percentage >= 5) return 2;
     return 1;
   }
 
-  String _getCategory(double score) {
-    if (score >= 4.1) return "Baik 😊";
-    if (score >= 3.1) return "Cukup 😐";
-    return "Buruk 😟";
+  // Update getCategory method to match evaluation screen
+  String getCategory(double score) {
+    if (score >= 4.1) return "Sangat Baik 😊";
+    if (score >= 3.1) return "Baik 😊";
+    if (score >= 2.1) return "Cukup 😐";
+    if (score >= 1.1) return "Kurang 😟";
+    return "Sangat Kurang 😟";
   }
 
   Color _getCategoryColor(double score) {
@@ -390,7 +419,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
           child: Icon(
-            Icons.account_balance_wallet_outlined,
+            Icons.account_balance_wallet_rounded,
             color: Colors.white,
             size: 20,
           ),
@@ -533,232 +562,65 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           physics: BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header Section dengan gradient
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(30),
-                    bottomRight: Radius.circular(30),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.teal.withOpacity(0.08),
-                      spreadRadius: 8,
-                      blurRadius: 20,
-                      offset: Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Rangkuman Bulan Ini",
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.black87,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              formatMonth.format(
-                                now,
-                              ), // Akan menampilkan format "Juni 2025"
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                (sisa >= 0 ? Colors.green : Colors.red)
-                                    .withOpacity(0.8),
-                                (sisa >= 0
-                                    ? Colors.green.shade300
-                                    : Colors.red.shade300),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: (sisa >= 0 ? Colors.green : Colors.red)
-                                    .withOpacity(0.2),
-                                blurRadius: 8,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                sisa >= 0
-                                    ? Icons.trending_up
-                                    : Icons.trending_down,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                sisa >= 0 ? "Surplus" : "Defisit",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 24),
-                    Container(
-                      padding: EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Color(
-                              0xFF20BF55,
-                            ), // Fresh modern green (sama dengan AppBar)
-                            Color(
-                              0xFF01BAEF,
-                            ), // Modern blue (sama dengan AppBar)
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0xFF20BF55).withOpacity(0.2),
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            formatCurrency.format(sisa),
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment
-                                    .spaceBetween, // Ubah ke mainAxisAlignment
-                            children: [
-                              // Hapus Text yang menampilkan sisa untuk kedua kalinya
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      "${((pemasukan - pengeluaran) / pemasukan * 100).toStringAsFixed(1)}%",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      "dari pemasukan",
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.8),
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildBalanceCard(
-                            "Pemasukan",
-                            pemasukan,
-                            Icons.arrow_upward,
-                            Colors.green,
-                          ),
-                        ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: _buildBalanceCard(
-                            "Pengeluaran",
-                            pengeluaran,
-                            Icons.arrow_downward,
-                            Colors.red,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // Alerts Section
-              if (alerts.isNotEmpty)
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 0,
+              right: 0,
+              top: 10.0,
+              bottom: 85.0,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Section dengan gradient
                 Container(
-                  margin: EdgeInsets.all(20),
+                  width: double.infinity,
+                  padding: EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.teal.withOpacity(0.08),
+                        spreadRadius: 8,
+                        blurRadius: 20,
+                        offset: Offset(0, 8),
+                      ),
+                    ],
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            "Notifikasi Penting",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Rangkuman Bulan Ini",
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                formatMonth.format(
+                                  now,
+                                ), // Akan menampilkan format "Juni 2025"
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
                           Container(
                             padding: EdgeInsets.symmetric(
@@ -766,24 +628,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.1),
+                              gradient: LinearGradient(
+                                colors: [
+                                  (sisa >= 0 ? Colors.green : Colors.red)
+                                      .withOpacity(0.8),
+                                  (sisa >= 0
+                                      ? Colors.green.shade300
+                                      : Colors.red.shade300),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
                               borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: (sisa >= 0 ? Colors.green : Colors.red)
+                                      .withOpacity(0.2),
+                                  blurRadius: 8,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  Icons.notifications_active,
-                                  color: Colors.red,
+                                  sisa >= 0
+                                      ? Icons.trending_up
+                                      : Icons.trending_down,
+                                  color: Colors.white,
                                   size: 16,
                                 ),
                                 SizedBox(width: 4),
                                 Text(
-                                  "${alerts.length} notifikasi",
+                                  sisa >= 0 ? "Surplus" : "Defisit",
                                   style: TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 12,
+                                    color: Colors.white,
                                     fontWeight: FontWeight.w600,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ],
@@ -791,410 +673,891 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ],
                       ),
-                      SizedBox(height: 16),
-                      ...alerts
-                          .map(
-                            (alert) => Container(
-                              margin: EdgeInsets.only(bottom: 12),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                  colors: [
-                                    alert['color'].withOpacity(0.15),
-                                    Colors.white,
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: alert['color'].withOpacity(0.1),
-                                    blurRadius: 8,
-                                    offset: Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) =>
-                                                AlertScreen(alert: alert),
-                                      ),
-                                    );
-                                  },
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          padding: EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: alert['color'].withOpacity(
-                                              0.1,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            border: Border.all(
-                                              color: alert['color'].withOpacity(
-                                                0.5,
-                                              ),
-                                              width: 1,
-                                            ),
-                                          ),
-                                          child: Icon(
-                                            alert['icon'],
-                                            color: alert['color'],
-                                            size: 24,
-                                          ),
-                                        ),
-                                        SizedBox(width: 16),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                alert['title'],
-                                                style: TextStyle(
-                                                  color: Colors.black87,
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 15,
-                                                ),
-                                              ),
-                                              SizedBox(height: 4),
-                                              Text(
-                                                "Ketuk untuk detail",
-                                                style: TextStyle(
-                                                  color: Colors.grey[600],
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: alert['color'].withOpacity(
-                                              0.1,
-                                            ),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Icon(
-                                            Icons.arrow_forward_ios,
-                                            color: alert['color'],
-                                            size: 16,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                      SizedBox(height: 24),
+                      Container(
+                        padding: EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(
+                                0xFF20BF55,
+                              ), // Fresh modern green (sama dengan AppBar)
+                              Color(
+                                0xFF01BAEF,
+                              ), // Modern blue (sama dengan AppBar)
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xFF20BF55).withOpacity(0.2),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              formatCurrency.format(sisa),
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
                               ),
                             ),
-                          )
-                          .toList(),
+                            SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment
+                                      .spaceBetween, // Ubah ke mainAxisAlignment
+                              children: [
+                                // Hapus Text yang menampilkan sisa untuk kedua kalinya
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        "${((pemasukan - pengeluaran) / pemasukan * 100).toStringAsFixed(1)}%",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        "dari pemasukan",
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.8),
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildBalanceCard(
+                              "Pemasukan",
+                              pemasukan,
+                              Icons.arrow_upward,
+                              Colors.green,
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: _buildBalanceCard(
+                              "Pengeluaran",
+                              pengeluaran,
+                              Icons.arrow_downward,
+                              Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
 
-              // Financial Score Card
-              Padding(
-                padding: EdgeInsets.all(20),
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        warnaKategori.withOpacity(0.9),
-                        warnaKategori.withOpacity(0.7),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: warnaKategori.withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: Offset(0, 6),
+                Container(
+                  margin: EdgeInsets.symmetric(horizontal: 0, vertical: 10),
+                  padding: EdgeInsets.all(20),
+                  // decoration: BoxDecoration(
+                  //   color: Colors.white,
+                  //   borderRadius: BorderRadius.circular(20),
+                  //   boxShadow: [
+                  //     BoxShadow(
+                  //       color: Colors.black.withOpacity(0.05),
+                  //       blurRadius: 10,
+                  //       offset: Offset(0, 5),
+                  //     ),
+                  //   ],
+                  // ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Text(
+                      //   "Menu Utama",
+                      //   style: TextStyle(
+                      //     fontSize: 18,
+                      //     fontWeight: FontWeight.bold,
+                      //     color: Colors.black87,
+                      //   ),
+                      // ),
+                      SizedBox(height: 20),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        crossAxisCount: 4,
+                        mainAxisSpacing: 20,
+                        crossAxisSpacing: 15,
+                        childAspectRatio: 0.85,
+                        children: [
+                          _buildMenuItem(
+                            icon:
+                                Icons
+                                    .savings_rounded, // Ganti dengan yang lebih modern
+                            label: "Tabungan",
+                            color: Color(0xFF20BF55),
+                            onTap:
+                                () => Navigator.pushNamed(context, '/savings'),
+                          ),
+                          _buildMenuItem(
+                            icon:
+                                Icons
+                                    .published_with_changes_rounded, // More modern add icon
+                            label: "Transaksi",
+                            color: Color(0xFF01BAEF),
+                            onTap: () => Navigator.pushNamed(context, '/add'),
+                          ),
+                          _buildMenuItem(
+                            icon:
+                                Icons.insights_rounded, // Better analytics icon
+                            label: "Evaluasi",
+                            color: Colors.purple,
+                            onTap:
+                                () =>
+                                    Navigator.pushNamed(context, '/evaluation'),
+                          ),
+                          _buildMenuItem(
+                            icon:
+                                Icons
+                                    .receipt_long_rounded, // Modern history icon
+                            label: "Riwayat",
+                            color: Colors.orange,
+                            onTap:
+                                () => Navigator.pushNamed(context, '/history'),
+                          ),
+                          _buildMenuItem(
+                            icon:
+                                Icons
+                                    .notification_important_rounded, // Better notification icon
+                            label: "Notifikasi",
+                            color: Colors.red,
+                            onTap: () {},
+                          ),
+                          _buildMenuItem(
+                            icon:
+                                Icons
+                                    .account_circle_rounded, // Modern profile icon
+                            label: "Profil",
+                            color: Colors.teal,
+                            onTap: () {},
+                          ),
+                          _buildMenuItem(
+                            icon:
+                                Icons.trending_up_rounded, // Modern trend icon
+                            label: "Tren",
+                            color: Colors.indigo,
+                            onTap: () {},
+                          ),
+                          _buildMenuItem(
+                            icon: Icons.logout_rounded,
+                            label: "Keluar",
+                            color: Colors.grey,
+                            onTap: () async {
+                              await AuthService.logout();
+                              Navigator.pushReplacementNamed(context, '/login');
+                            },
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  child:
-                      isEvaluationLoading
-                          ? Center(
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
+                ),
+
+                // Alerts Section
+                if (alerts.isNotEmpty)
+                  Container(
+                    margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Notifikasi Penting",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
                             ),
-                          )
-                          : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Skor Keuangan",
-                                        style: TextStyle(
-                                          color: Colors.white.withOpacity(0.9),
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                      SizedBox(height: 8),
-                                      Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.end,
-                                        children: [
-                                          Text(
-                                            "$skorPersen",
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 36,
-                                              fontWeight: FontWeight.bold,
-                                              height: 1,
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: EdgeInsets.only(bottom: 6),
-                                            child: Text(
-                                              "/100",
-                                              style: TextStyle(
-                                                color: Colors.white.withOpacity(
-                                                  0.7,
-                                                ),
-                                                fontSize: 18,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                                  Icon(
+                                    Icons.notifications_active,
+                                    color: Colors.red,
+                                    size: 16,
                                   ),
-                                  Container(
-                                    width: 64,
-                                    height: 64,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.15),
-                                      borderRadius: BorderRadius.circular(32),
-                                    ),
-                                    child: Center(
-                                      child: Icon(
-                                        evaluationScore >= 4.1
-                                            ? Icons.sentiment_very_satisfied
-                                            : evaluationScore >= 3.1
-                                            ? Icons.sentiment_satisfied
-                                            : Icons.sentiment_dissatisfied,
-                                        color: Colors.white,
-                                        size: 32,
-                                      ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    "${alerts.length} notifikasi",
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 24),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16),
+                        ...alerts
+                            .map(
+                              (alert) => Container(
+                                margin: EdgeInsets.only(bottom: 12),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.star_rounded,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      "Kategori: $evaluationCategory",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                    colors: [
+                                      alert['color'].withOpacity(0.15),
+                                      Colors.white,
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: alert['color'].withOpacity(0.1),
+                                      blurRadius: 8,
+                                      offset: Offset(0, 4),
                                     ),
                                   ],
                                 ),
-                              ),
-                              SizedBox(height: 16),
-                              Container(
-                                padding: EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.1),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(
-                                        Icons.lightbulb_outline,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
-                                    ),
-                                    SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) =>
+                                                  AlertScreen(alert: alert),
+                                        ),
+                                      );
+                                    },
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Padding(
+                                      padding: EdgeInsets.all(16),
+                                      child: Row(
                                         children: [
-                                          Text(
-                                            "Rekomendasi",
-                                            style: TextStyle(
-                                              color: Colors.white.withOpacity(
-                                                0.9,
+                                          Container(
+                                            padding: EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: alert['color'].withOpacity(
+                                                0.1,
                                               ),
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: alert['color']
+                                                    .withOpacity(0.5),
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Icon(
+                                              alert['icon'],
+                                              color: alert['color'],
+                                              size: 24,
                                             ),
                                           ),
-                                          SizedBox(height: 4),
-                                          Text(
-                                            _getRecommendation(evaluationScore),
-                                            style: TextStyle(
-                                              color: Colors.white.withOpacity(
-                                                0.8,
+                                          SizedBox(width: 16),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  alert['title'],
+                                                  style: TextStyle(
+                                                    color: Colors.black87,
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 15,
+                                                  ),
+                                                ),
+                                                SizedBox(height: 4),
+                                                Text(
+                                                  "Ketuk untuk detail",
+                                                  style: TextStyle(
+                                                    color: Colors.grey[600],
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: alert['color'].withOpacity(
+                                                0.1,
                                               ),
-                                              fontSize: 13,
-                                              height: 1.4,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                              Icons.arrow_forward_ios,
+                                              color: alert['color'],
+                                              size: 16,
                                             ),
                                           ),
                                         ],
                                       ),
                                     ),
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ],
+                    ),
+                  ),
+
+                // Financial Score Card
+                Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          warnaKategori.withOpacity(0.9),
+                          warnaKategori.withOpacity(0.7),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: warnaKategori.withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child:
+                        isEvaluationLoading
+                            ? Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                              ),
+                            )
+                            : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Skor Keuangan",
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(
+                                              0.9,
+                                            ),
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        SizedBox(height: 8),
+                                        Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          children: [
+                                            Text(
+                                              "$skorPersen",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 36,
+                                                fontWeight: FontWeight.bold,
+                                                height: 1,
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.only(
+                                                bottom: 6,
+                                              ),
+                                              child: Text(
+                                                "/100",
+                                                style: TextStyle(
+                                                  color: Colors.white
+                                                      .withOpacity(0.7),
+                                                  fontSize: 18,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    Container(
+                                      width: 64,
+                                      height: 64,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(32),
+                                      ),
+                                      child: Center(
+                                        child: Icon(
+                                          evaluationScore >= 4.1
+                                              ? Icons.sentiment_very_satisfied
+                                              : evaluationScore >= 3.1
+                                              ? Icons.sentiment_satisfied
+                                              : Icons.sentiment_dissatisfied,
+                                          color: Colors.white,
+                                          size: 32,
+                                        ),
+                                      ),
+                                    ),
                                   ],
+                                ),
+                                SizedBox(height: 24),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.star_rounded,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        "Kategori: $evaluationCategory",
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(height: 16),
+                                Container(
+                                  padding: EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.1),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.lightbulb_outline,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "Rekomendasi",
+                                              style: TextStyle(
+                                                color: Colors.white.withOpacity(
+                                                  0.9,
+                                                ),
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            SizedBox(height: 4),
+                                            Text(
+                                              _getRecommendation(
+                                                evaluationScore,
+                                              ),
+                                              style: TextStyle(
+                                                color: Colors.white.withOpacity(
+                                                  0.8,
+                                                ),
+                                                fontSize: 13,
+                                                height: 1.4,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                  ),
+                ),
+
+                // Monthly Stats Section
+                Container(
+                  height: 120,
+                  margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Color(0xFF20BF55).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Tren Pengeluaran",
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              "7 hari terakhir",
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                            Spacer(),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.trending_down,
+                                  color: Colors.green,
+                                  size: 16,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  "12.5%",
+                                  style: TextStyle(
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  " vs minggu lalu",
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: 100,
+                        child: CustomPaint(
+                          painter: SparklinePainter([
+                            0.5,
+                            0.3,
+                            0.7,
+                            0.4,
+                            0.8,
+                            0.6,
+                            0.5,
+                          ]),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Container(
+                  margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Transaksi Terakhir",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed:
+                                () => Navigator.pushNamed(context, '/history'),
+                            style: TextButton.styleFrom(
+                              backgroundColor: Color(
+                                0xFF20BF55,
+                              ).withOpacity(0.1),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  "Lihat Semua",
+                                  style: TextStyle(
+                                    color: Color(0xFF20BF55),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                Icon(
+                                  Icons.arrow_forward,
+                                  size: 16,
+                                  color: Color(0xFF20BF55),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      if (transactions.isEmpty)
+                        Center(
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.receipt_long_outlined,
+                                size: 48,
+                                color: Colors.grey[400],
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                "Belum ada transaksi",
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 16,
                                 ),
                               ),
                             ],
                           ),
+                        )
+                      else
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
+                          itemCount:
+                              transactions.length > 3 ? 3 : transactions.length,
+                          itemBuilder: (context, index) {
+                            final transaction = transactions[index];
+                            final isIncome = transaction['type'] == 'income';
+                            return Container(
+                              margin: EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.04),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: ListTile(
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                leading: Container(
+                                  padding: EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: (isIncome
+                                            ? Colors.green
+                                            : Colors.red)
+                                        .withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    isIncome
+                                        ? Icons.arrow_upward
+                                        : Icons.arrow_downward,
+                                    color: isIncome ? Colors.green : Colors.red,
+                                    size: 24,
+                                  ),
+                                ),
+                                title: Text(
+                                  transaction['description'] ?? 'Transaksi',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  DateFormat(
+                                    'dd MMMM yyyy',
+                                  ).format(DateTime.parse(transaction['date'])),
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                trailing: Text(
+                                  formatCurrency.format(transaction['amount']),
+                                  style: TextStyle(
+                                    color: isIncome ? Colors.green : Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      floatingActionButton: Container(
+        height: 65,
+        width: 65,
+        margin: EdgeInsets.only(bottom: 15),
+        child: FittedBox(
+          child: FloatingActionButton(
+            onPressed: () => Navigator.pushNamed(context, '/add'),
+            backgroundColor: Color(0xFF20BF55),
+            elevation: 4,
+            child: Icon(Icons.add_rounded, color: Colors.white, size: 32),
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: CustomBottomNav(currentIndex: 0),
+    );
+  }
 
-              // Quick Actions Grid
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Menu Cepat",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      crossAxisCount: 4,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                      childAspectRatio:
-                          0.85, // Sesuaikan agar tidak terlalu kotak
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      children: [
-                        _buildQuickButton(
-                          context,
-                          Icons.add_circle_outlined,
-                          "Tambah",
-                          '/add',
-                        ),
-                        _buildQuickButton(
-                          context,
-                          Icons.savings_outlined,
-                          "Tabungan",
-                          '/savings',
-                        ),
-                        _buildQuickButton(
-                          context,
-                          Icons.analytics_outlined,
-                          "Evaluasi",
-                          '/evaluation',
-                        ),
-                        _buildQuickButton(
-                          context,
-                          Icons.history,
-                          "Riwayat",
-                          '/history',
-                        ),
-                      ],
-                    ),
-                  ],
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.2)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  shape: BoxShape.circle,
                 ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              SizedBox(height: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  // Update _buildBalanceInfo
-  Widget _buildBalanceInfo(
-    String title,
-    int amount,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 16),
-              SizedBox(width: 4),
-              Text(
-                title,
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
-              ),
-            ],
-          ),
-          SizedBox(height: 8),
-          Text(
-            formatCurrency.format(amount),
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1248,77 +1611,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildQuickButton(
-    BuildContext context,
-    IconData icon,
-    String label,
-    String route,
-  ) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () async {
-          final result = await Navigator.pushNamed(context, route);
-          if (result == true) {
-            await fetchTransactions();
-            await fetchEvaluation();
-          }
-        },
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          margin: EdgeInsets.all(4),
-          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.teal.withOpacity(0.08),
-                blurRadius: 10,
-                offset: Offset(0, 4),
-              ),
-            ],
-            border: Border.all(color: Colors.teal.withOpacity(0.1), width: 1),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.teal.shade300, Colors.teal.shade500],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.teal.withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(icon, color: Colors.white, size: 24),
-              ),
-              SizedBox(height: 12),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
-                  letterSpacing: 0.3,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

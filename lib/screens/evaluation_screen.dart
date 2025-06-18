@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:catatin_app/utils/score_calculator.dart';
 import '../services/auth_service.dart';
+import '../widgets/bottom_nav.dart';
 
 class EvaluationScreen extends StatefulWidget {
   const EvaluationScreen({Key? key}) : super(key: key);
@@ -187,186 +188,208 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           physics: AlwaysScrollableScrollPhysics(),
-          child: Column(
-            children: [
-              // Score Card
-              Container(
-                width: double.infinity,
-                margin: EdgeInsets.all(16),
-                padding: EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      getCategoryColor().withOpacity(0.8),
-                      getCategoryColor(),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: getCategoryColor().withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      "Skor Keuangan Kamu",
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 16,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          "$scoreFinal",
-                          style: TextStyle(
-                            fontSize: 48,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          "/100",
-                          style: TextStyle(
-                            fontSize: 24,
-                            color: Colors.white.withOpacity(0.8),
-                          ),
-                        ),
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: 85.0,
+            ), // Add bottom padding for nav bar
+            child: Column(
+              children: [
+                // Score Card
+                Container(
+                  width: double.infinity,
+                  margin: EdgeInsets.all(16),
+                  padding: EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        getCategoryColor().withOpacity(0.8),
+                        getCategoryColor(),
                       ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    SizedBox(height: 16),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: getCategoryColor().withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: Offset(0, 4),
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        category,
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        "Skor Keuangan Kamu",
                         style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                          color: Colors.white.withOpacity(0.9),
                           fontSize: 16,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Recommendation Card
-              Container(
-                margin: EdgeInsets.symmetric(horizontal: 16),
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 10,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.lightbulb_outline, color: Colors.amber),
-                        SizedBox(width: 8),
-                        Text(
-                          "Rekomendasi",
+                      SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            "$scoreFinal",
+                            style: TextStyle(
+                              fontSize: 48,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            "/100",
+                            style: TextStyle(
+                              fontSize: 24,
+                              color: Colors.white.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          category,
                           style: TextStyle(
-                            fontSize: 18,
+                            color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            fontSize: 16,
                           ),
                         ),
-                      ],
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      recommendation,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.black87,
-                        height: 1.5,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
-              // Criteria Details
-              Container(
-                margin: EdgeInsets.all(16),
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 10,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Detail Kriteria",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                // Recommendation Card
+                Container(
+                  margin: EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 1,
+                        blurRadius: 10,
+                        offset: Offset(0, 2),
                       ),
-                    ),
-                    SizedBox(height: 16),
-                    _buildKriteria(
-                      "Rasio Pemasukan vs Pengeluaran",
-                      scores['income_ratio']!,
-                    ),
-                    _buildKriteria(
-                      "Konsistensi Menabung",
-                      scores['saving_consistency']!,
-                    ),
-                    _buildKriteria(
-                      "Pengeluaran Tak Terduga",
-                      scores['unexpected_expense']!,
-                    ),
-                    _buildKriteria(
-                      "Frekuensi Pencatatan",
-                      scores['record_frequency']!,
-                    ),
-                    _buildKriteria(
-                      "Persentase Tabungan dari Pemasukan",
-                      scores['saving_percentage']!,
-                    ),
-                  ],
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.lightbulb_outline, color: Colors.amber),
+                          SizedBox(width: 8),
+                          Text(
+                            "Rekomendasi",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        recommendation,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black87,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+
+                // Criteria Details
+                Container(
+                  margin: EdgeInsets.all(16),
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 1,
+                        blurRadius: 10,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Detail Kriteria",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      _buildKriteria(
+                        "Rasio Pemasukan vs Pengeluaran",
+                        scores['income_ratio']!,
+                      ),
+                      _buildKriteria(
+                        "Konsistensi Menabung",
+                        scores['saving_consistency']!,
+                      ),
+                      _buildKriteria(
+                        "Pengeluaran Tak Terduga",
+                        scores['unexpected_expense']!,
+                      ),
+                      _buildKriteria(
+                        "Frekuensi Pencatatan",
+                        scores['record_frequency']!,
+                      ),
+                      _buildKriteria(
+                        "Persentase Tabungan dari Pemasukan",
+                        scores['saving_percentage']!,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
+      floatingActionButton: Container(
+        height: 65,
+        width: 65,
+        margin: EdgeInsets.only(bottom: 15),
+        child: FittedBox(
+          child: FloatingActionButton(
+            onPressed: () => Navigator.pushNamed(context, '/add'),
+            backgroundColor: Color(0xFF20BF55),
+            elevation: 4,
+            child: Icon(Icons.add_rounded, color: Colors.white, size: 32),
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: CustomBottomNav(
+        currentIndex: 2,
+      ), // Use index 2 for evaluation
     );
   }
 

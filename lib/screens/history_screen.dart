@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../services/auth_service.dart';
+import '../widgets/bottom_nav.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({Key? key}) : super(key: key);
@@ -135,227 +136,250 @@ class _HistoryScreenState extends State<HistoryScreen> {
               )
               : RefreshIndicator(
                 onRefresh: fetchTransactions,
-                child: Column(
-                  children: [
-                    // Filter Section
-                    Container(
-                      margin: EdgeInsets.all(16),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
-                            spreadRadius: 1,
-                            blurRadius: 10,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.filter_list, color: Colors.grey[600]),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: selectedType,
-                                isExpanded: true,
-                                items:
-                                    ['Semua', 'Pemasukan', 'Pengeluaran'].map((
-                                      type,
-                                    ) {
-                                      return DropdownMenuItem(
-                                        value: type,
-                                        child: Text(
-                                          type,
-                                          style: TextStyle(
-                                            color: Colors.black87,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                                onChanged: (val) {
-                                  if (val != null)
-                                    setState(() => selectedType = val);
-                                },
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 85.0), // Add bottom padding
+                  child: Column(
+                    children: [
+                      // Filter Section
+                      Container(
+                        margin: EdgeInsets.all(16),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.1),
+                              spreadRadius: 1,
+                              blurRadius: 10,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.filter_list, color: Colors.grey[600]),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: selectedType,
+                                  isExpanded: true,
+                                  items:
+                                      ['Semua', 'Pemasukan', 'Pengeluaran'].map(
+                                        (type) {
+                                          return DropdownMenuItem(
+                                            value: type,
+                                            child: Text(
+                                              type,
+                                              style: TextStyle(
+                                                color: Colors.black87,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ).toList(),
+                                  onChanged: (val) {
+                                    if (val != null)
+                                      setState(() => selectedType = val);
+                                  },
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Summary Section
-                    Container(
-                      margin: EdgeInsets.symmetric(horizontal: 16),
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Colors.teal.shade400, Colors.teal.shade600],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                          ],
                         ),
-                        borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildSummaryItem(
-                            "Pemasukan",
-                            filteredTransactions
-                                .where((t) => t['type'] == 'Pemasukan')
-                                .fold(
-                                  0,
-                                  (sum, tx) => sum + (tx['amount'] as int),
-                                ),
-                            Icons.arrow_downward,
-                            Colors.green,
-                          ),
-                          Container(
-                            height: 40,
-                            width: 1,
-                            color: Colors.white.withOpacity(0.3),
-                          ),
-                          _buildSummaryItem(
-                            "Pengeluaran",
-                            filteredTransactions
-                                .where((t) => t['type'] == 'Pengeluaran')
-                                .fold(
-                                  0,
-                                  (sum, tx) => sum + (tx['amount'] as int),
-                                ),
-                            Icons.arrow_upward,
-                            Colors.red,
-                          ),
-                        ],
-                      ),
-                    ),
 
-                    // Transactions List
-                    Expanded(
-                      child:
-                          filteredTransactions.isEmpty
-                              ? Center(
-                                child: Text(
-                                  'Tidak ada transaksi',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 16,
+                      // Summary Section
+                      Container(
+                        margin: EdgeInsets.symmetric(horizontal: 16),
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.teal.shade400,
+                              Colors.teal.shade600,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildSummaryItem(
+                              "Pemasukan",
+                              filteredTransactions
+                                  .where((t) => t['type'] == 'Pemasukan')
+                                  .fold(
+                                    0,
+                                    (sum, tx) => sum + (tx['amount'] as int),
                                   ),
-                                ),
-                              )
-                              : ListView.builder(
-                                padding: EdgeInsets.all(16),
-                                itemCount: filteredTransactions.length,
-                                itemBuilder: (context, index) {
-                                  final tx = filteredTransactions[index];
-                                  final numberFormat = NumberFormat.currency(
-                                    locale: 'id_ID',
-                                    symbol: 'Rp ',
-                                    decimalDigits: 0,
-                                  );
-                                  final date = DateFormat(
-                                    'dd MMM yyyy',
-                                  ).format(DateTime.parse(tx['date']));
+                              Icons.arrow_downward,
+                              Colors.green,
+                            ),
+                            Container(
+                              height: 40,
+                              width: 1,
+                              color: Colors.white.withOpacity(0.3),
+                            ),
+                            _buildSummaryItem(
+                              "Pengeluaran",
+                              filteredTransactions
+                                  .where((t) => t['type'] == 'Pengeluaran')
+                                  .fold(
+                                    0,
+                                    (sum, tx) => sum + (tx['amount'] as int),
+                                  ),
+                              Icons.arrow_upward,
+                              Colors.red,
+                            ),
+                          ],
+                        ),
+                      ),
 
-                                  return Container(
-                                    margin: EdgeInsets.only(bottom: 12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.grey.withOpacity(0.1),
-                                          spreadRadius: 1,
-                                          blurRadius: 4,
-                                          offset: Offset(0, 2),
-                                        ),
-                                      ],
+                      // Transactions List
+                      Expanded(
+                        child:
+                            filteredTransactions.isEmpty
+                                ? Center(
+                                  child: Text(
+                                    'Tidak ada transaksi',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 16,
                                     ),
-                                    child: ListTile(
-                                      contentPadding: EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 8,
-                                      ),
-                                      leading: Container(
-                                        padding: EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: (tx['type'] == 'Pemasukan'
-                                                  ? Colors.green
-                                                  : Colors.red)
-                                              .withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: Icon(
-                                          tx['type'] == 'Pemasukan'
-                                              ? Icons.arrow_downward
-                                              : Icons.arrow_upward,
-                                          color:
-                                              tx['type'] == 'Pemasukan'
-                                                  ? Colors.green
-                                                  : Colors.red,
-                                        ),
-                                      ),
-                                      title: Text(
-                                        tx['description'],
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                      subtitle: Row(
-                                        children: [
-                                          Container(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.grey[200],
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
-                                            ),
-                                            child: Text(
-                                              tx['category'],
-                                              style: TextStyle(fontSize: 12),
-                                            ),
-                                          ),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            date,
-                                            style: TextStyle(
-                                              color: Colors.grey[600],
-                                            ),
+                                  ),
+                                )
+                                : ListView.builder(
+                                  padding: EdgeInsets.all(16),
+                                  itemCount: filteredTransactions.length,
+                                  itemBuilder: (context, index) {
+                                    final tx = filteredTransactions[index];
+                                    final numberFormat = NumberFormat.currency(
+                                      locale: 'id_ID',
+                                      symbol: 'Rp ',
+                                      decimalDigits: 0,
+                                    );
+                                    final date = DateFormat(
+                                      'dd MMM yyyy',
+                                    ).format(DateTime.parse(tx['date']));
+
+                                    return Container(
+                                      margin: EdgeInsets.only(bottom: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.grey.withOpacity(0.1),
+                                            spreadRadius: 1,
+                                            blurRadius: 4,
+                                            offset: Offset(0, 2),
                                           ),
                                         ],
                                       ),
-                                      trailing: Text(
-                                        numberFormat.format(tx['amount']),
-                                        style: TextStyle(
-                                          color:
-                                              tx['type'] == 'Pemasukan'
-                                                  ? Colors.green
-                                                  : Colors.red,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
+                                      child: ListTile(
+                                        contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 8,
+                                        ),
+                                        leading: Container(
+                                          padding: EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: (tx['type'] == 'Pemasukan'
+                                                    ? Colors.green
+                                                    : Colors.red)
+                                                .withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            tx['type'] == 'Pemasukan'
+                                                ? Icons.arrow_downward
+                                                : Icons.arrow_upward,
+                                            color:
+                                                tx['type'] == 'Pemasukan'
+                                                    ? Colors.green
+                                                    : Colors.red,
+                                          ),
+                                        ),
+                                        title: Text(
+                                          tx['description'],
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        subtitle: Row(
+                                          children: [
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey[200],
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                tx['category'],
+                                                style: TextStyle(fontSize: 12),
+                                              ),
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              date,
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        trailing: Text(
+                                          numberFormat.format(tx['amount']),
+                                          style: TextStyle(
+                                            color:
+                                                tx['type'] == 'Pemasukan'
+                                                    ? Colors.green
+                                                    : Colors.red,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              ),
-                    ),
-                  ],
+                                    );
+                                  },
+                                ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
+      floatingActionButton: Container(
+        height: 65,
+        width: 65,
+        margin: EdgeInsets.only(bottom: 15),
+        child: FittedBox(
+          child: FloatingActionButton(
+            onPressed: () => Navigator.pushNamed(context, '/add'),
+            backgroundColor: Color(0xFF20BF55),
+            elevation: 4,
+            child: Icon(Icons.add_rounded, color: Colors.white, size: 32),
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: CustomBottomNav(
+        currentIndex: 3,
+      ), // Use index 3 for history
     );
   }
 }
