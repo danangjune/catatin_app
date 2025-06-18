@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../services/auth_service.dart';
 import '../widgets/bottom_nav.dart';
+import 'package:flutter_masked_text2/flutter_masked_text2.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({Key? key}) : super(key: key);
@@ -14,11 +15,16 @@ class AddTransactionScreen extends StatefulWidget {
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _amountController = TextEditingController();
+  final MoneyMaskedTextController _amountController = MoneyMaskedTextController(
+    decimalSeparator: '', // Tidak pakai desimal
+    thousandSeparator: '.', // Pemisah ribuan pakai titik
+    precision: 0, // Tidak pakai angka di belakang koma
+    leftSymbol: 'Rp ', // Tambah simbol Rupiah
+  );
   final TextEditingController _descController = TextEditingController();
 
   String _selectedType = 'Pemasukan';
-  String _selectedCategory = 'Makan';
+  String _selectedCategory = 'Gaji';
   DateTime _selectedDate = DateTime.now();
 
   final Map<String, List<String>> _categoryMap = {
@@ -46,15 +52,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   void initState() {
     super.initState();
-    // Set kategori default sesuai tipe transaksi
+
+    _amountController.text = '0';
     _selectedCategory = _categoryMap[_selectedType]![0];
   }
 
-  // Update kategori saat tipe transaksi berubah
   void _updateType(String newType) {
     setState(() {
       _selectedType = newType;
-      // Update selected category when type changes
       _selectedCategory = _categoryMap[newType]![0];
     });
   }
@@ -80,10 +85,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       final String backendType =
           _selectedType == 'Pemasukan' ? 'income' : 'expense';
 
+      // Ambil angka asli tanpa format
+      final rawAmount = _amountController.numberValue.toInt();
+
       final body = {
         'type': backendType,
         'category': _selectedCategory.toLowerCase(),
-        'amount': _amountController.text,
+        'amount': rawAmount,
         'description': _descController.text,
         'date': _selectedDate.toIso8601String().substring(0, 10),
       };
@@ -138,17 +146,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         ),
         title: Text(
           "Tambah Transaksi",
-          style: TextStyle(
-            color: const Color.fromARGB(221, 255, 255, 255),
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
-        backgroundColor: Colors.white,
-        iconTheme: IconThemeData(color: Colors.black87),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [
-          // Type Selector
           Container(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
@@ -156,7 +159,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 Expanded(
                   child: InkWell(
                     onTap: () => _updateType('Pemasukan'),
-                    child: Container(
+                    borderRadius: BorderRadius.circular(12),
+                    child: AnimatedContainer(
+                      duration: Duration(milliseconds: 200),
                       padding: EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
                         color:
@@ -201,7 +206,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 Expanded(
                   child: InkWell(
                     onTap: () => _updateType('Pengeluaran'),
-                    child: Container(
+                    borderRadius: BorderRadius.circular(12),
+                    child: AnimatedContainer(
+                      duration: Duration(milliseconds: 200),
                       padding: EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
                         color:
@@ -263,194 +270,30 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 ],
               ),
               child: SingleChildScrollView(
-                padding: EdgeInsets.only(
-                  left: 24,
-                  right: 24,
-                  top: 24,
-                  bottom: 100, // Increased padding for bottom nav
-                ),
+                padding: EdgeInsets.fromLTRB(24, 24, 24, 100),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Amount Field
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade200),
-                        ),
-                        child: TextFormField(
-                          controller: _amountController,
-                          keyboardType: TextInputType.number,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color:
-                                _selectedType == 'Pemasukan'
-                                    ? Colors.green
-                                    : Colors.red,
-                          ),
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            prefixText: "Rp ",
-                            prefixStyle: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color:
-                                  _selectedType == 'Pemasukan'
-                                      ? Colors.green
-                                      : Colors.red,
-                            ),
-                            hintText: "0",
-                            hintStyle: TextStyle(
-                              color: Colors.grey.shade400,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          validator:
-                              (value) => value!.isEmpty ? "Wajib diisi" : null,
-                        ),
-                      ),
+                      _buildAmountField(),
                       SizedBox(height: 24),
-
-                      // Category Field
-                      Text(
+                      _buildDropdownField(
                         "Kategori",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                      SizedBox(height: 12),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade200),
-                        ),
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedCategory,
-                          decoration: InputDecoration(border: InputBorder.none),
-                          items:
-                              _categoryMap[_selectedType]!
-                                  .map(
-                                    (cat) => DropdownMenuItem(
-                                      value: cat,
-                                      child: Text(cat),
-                                    ),
-                                  )
-                                  .toList(),
-                          onChanged:
-                              (value) =>
-                                  setState(() => _selectedCategory = value!),
-                        ),
+                        _categoryMap[_selectedType]!,
+                        _selectedCategory,
+                        (val) => setState(() => _selectedCategory = val),
                       ),
                       SizedBox(height: 24),
-
-                      // Date Picker
-                      Text(
-                        "Tanggal",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                      SizedBox(height: 12),
-                      InkWell(
-                        onTap: _pickDate,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey.shade200),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_today,
-                                color: Colors.grey.shade600,
-                              ),
-                              SizedBox(width: 12),
-                              Text(
-                                DateFormat(
-                                  'dd MMMM yyyy',
-                                ).format(_selectedDate),
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey.shade700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                      _buildDatePicker(),
                       SizedBox(height: 24),
-
-                      // Description Field
-                      Text(
+                      _buildTextField(
                         "Keterangan",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade700,
-                        ),
+                        _descController,
+                        hint: "Tambahkan keterangan...",
                       ),
-                      SizedBox(height: 12),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade200),
-                        ),
-                        child: TextFormField(
-                          controller: _descController,
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            hintText: "Tambahkan keterangan...",
-                            hintStyle: TextStyle(color: Colors.grey.shade400),
-                          ),
-                        ),
-                      ),
-
-                      // Add Submit Button here at the end of the form
                       SizedBox(height: 32),
-                      Container(
-                        width: double.infinity,
-                        margin: EdgeInsets.only(bottom: 16),
-                        child: ElevatedButton(
-                          onPressed: _submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFF20BF55),
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text(
-                            "Simpan Transaksi",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
+                      _buildSubmitButton(),
                     ],
                   ),
                 ),
@@ -472,6 +315,179 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: CustomBottomNav(currentIndex: -1),
+    );
+  }
+
+  Widget _buildAmountField() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: TextFormField(
+        controller: _amountController,
+        keyboardType: TextInputType.number,
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: _selectedType == 'Pemasukan' ? Colors.green : Colors.red,
+        ),
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          hintText: "Rp 0",
+          hintStyle: TextStyle(
+            color: Colors.grey.shade400,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        validator:
+            (value) =>
+                _amountController.numberValue == 0 ? "Wajib diisi" : null,
+      ),
+    );
+  }
+
+  Widget _buildDropdownField(
+    String label,
+    List<String> items,
+    String value,
+    void Function(String) onChanged,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        SizedBox(height: 12),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: DropdownButtonFormField<String>(
+            value: value,
+            decoration: InputDecoration(border: InputBorder.none),
+            items:
+                items
+                    .map(
+                      (cat) => DropdownMenuItem(value: cat, child: Text(cat)),
+                    )
+                    .toList(),
+            onChanged: (val) => onChanged(val!),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller, {
+    String? hint,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        SizedBox(height: 12),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: TextFormField(
+            controller: controller,
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              hintText: hint,
+              hintStyle: TextStyle(color: Colors.grey.shade400),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDatePicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Tanggal",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        SizedBox(height: 12),
+        InkWell(
+          onTap: _pickDate,
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.calendar_today, color: Colors.grey.shade600),
+                SizedBox(width: 12),
+                Text(
+                  DateFormat('dd MMMM yyyy').format(_selectedDate),
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.only(bottom: 16),
+      child: ElevatedButton(
+        onPressed: _submit,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Color(0xFF20BF55),
+          padding: EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Text(
+          "Simpan Transaksi",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ),
     );
   }
 }
