@@ -23,7 +23,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   );
   DateTime now = DateTime.now();
   DateFormat formatMonth = DateFormat('MMMM yyyy');
-
+  Map<String, dynamic>? savingInfo;
   List<Map<String, dynamic>> alerts = [];
   List<dynamic> transactions = [];
   bool isLoading = true;
@@ -89,6 +89,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         final data = responseData['data'];
+        savingInfo = data['saving_info'];
 
         // Calculate scores using evaluation criteria
         double incomeRatio =
@@ -340,30 +341,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     // 5. Cek Target Tabungan
-    final targetSavings = pemasukan * 0.2; // target 20% dari pendapatan
-    final currentSavings = transactions
-        .where(
-          (t) =>
-              t['type'] == 'savings' &&
-              DateTime.parse(t['date']).month == now.month,
-        )
-        .fold(0, (sum, t) => sum + (t['amount'] as int));
+    if (savingInfo != null) {
+      final targetSavings = savingInfo!['target_amount'] ?? 0;
+      final currentSavings = savingInfo!['saved_amount'] ?? 0;
 
-    if (currentSavings < targetSavings) {
-      final percentage = ((currentSavings / targetSavings) * 100)
-          .toStringAsFixed(1);
-      alerts.add({
-        'icon': Icons.savings,
-        'title': '💰 Target Menabung Belum Tercapai',
-        'color': Colors.blue,
-        'description': 'Target menabung bulan ini belum tercapai',
-        'severity': 'medium',
-        'metadata': {
-          'target_amount': targetSavings,
-          'current_savings': currentSavings,
-          'percentage': percentage,
-        },
-      });
+      if (currentSavings < targetSavings) {
+        final percentage =
+            targetSavings > 0
+                ? ((currentSavings / targetSavings) * 100).toStringAsFixed(1)
+                : '0';
+
+        alerts.add({
+          'icon': Icons.savings,
+          'title': '💰 Target Menabung Belum Tercapai',
+          'color': Colors.blue,
+          'description': 'Target menabung bulan ini belum tercapai',
+          'severity': 'medium',
+          'metadata': {
+            'target_amount': targetSavings,
+            'current_savings': currentSavings,
+            'percentage': percentage,
+          },
+        });
+      }
     }
   }
 
@@ -377,25 +377,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         elevation: 0,
+        backgroundColor: Colors.transparent,
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF20BF55), // Fresh modern green
-                Color(0xFF01BAEF), // Modern blue
-              ],
+              colors: [Color(0xFF20BF55), Color(0xFF01BAEF)],
             ),
           ),
         ),
+        leadingWidth: 60,
         leading: Padding(
-          padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
+          padding: const EdgeInsets.only(left: 16),
           child: Image.asset(
             'assets/images/catatin logo.png',
-            width: 32, // Lebih besar biar seimbang dengan teks
-            height: 32,
-            fit: BoxFit.contain,
+            width: 40,
+            height: 40,
           ),
         ),
         title: Column(
@@ -412,11 +410,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     letterSpacing: 0.5,
                   ),
                 ),
-                SizedBox(width: 4),
+                SizedBox(width: 6),
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -433,7 +431,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text(
               'Selamat Pagi, User! 👋',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withOpacity(0.85),
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
               ),
@@ -441,91 +439,68 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
         actions: [
+          // Notifikasi
           Container(
-            margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.1),
-                width: 1,
-              ),
-            ),
-            child: IconButton(
-              icon: Stack(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(2),
-                    child: Icon(
-                      Icons.notifications_none_rounded,
-                      color: Colors.white,
-                      size: 24,
-                    ),
+            margin: EdgeInsets.symmetric(horizontal: 4),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    Icons.notifications_none_rounded,
+                    color: Colors.white,
+                    size: 28, // perbesar sedikit agar badge tidak nutupi
                   ),
-                  if (alerts.isNotEmpty)
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
+                  onPressed: () {
+                    if (alerts.isNotEmpty) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => AlertScreen(
+                                alerts: alerts,
+                              ), // tampilkan semua alerts
                         ),
-                        decoration: BoxDecoration(
-                          color: Colors.redAccent,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white, width: 1.5),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 4,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        constraints: BoxConstraints(
-                          minWidth: 18,
-                          minHeight: 18,
-                        ),
-                        child: Text(
-                          '${alerts.length}',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            height: 1,
+                      );
+                    }
+                  },
+                ),
+                if (alerts.isNotEmpty)
+                  Positioned(
+                    right: 0,
+                    top: 2,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white, width: 1.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
                           ),
-                          textAlign: TextAlign.center,
+                        ],
+                      ),
+                      child: Text(
+                        '${alerts.length}',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          height: 1,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                ],
-              ),
-              onPressed: () {
-                if (alerts.isNotEmpty) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => AlertScreen(
-                            alert: alerts[0],
-                          ), // Bisa disesuaikan untuk menampilkan semua alert
-                    ),
-                  );
-                }
-              },
+                  ),
+              ],
             ),
           ),
+          // Profile
           Container(
-            margin: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.1),
-                width: 1,
-              ),
-            ),
+            margin: EdgeInsets.only(right: 8),
             child: IconButton(
               icon: Icon(Icons.person_outline_rounded, color: Colors.white),
               onPressed: () => Navigator.pushNamed(context, '/profile'),
@@ -574,20 +549,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                "Rangkuman Bulan Ini",
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.black87,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.4,
-                                ),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.calendar_today_rounded,
+                                    color: Colors.grey[700],
+                                    size: 16,
+                                  ),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    "Rangkuman Bulan Ini",
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: Colors.black87,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.4,
+                                    ),
+                                  ),
+                                ],
                               ),
                               SizedBox(height: 4),
                               Text(
-                                formatMonth.format(
-                                  now,
-                                ), // Akan menampilkan format "Juni 2025"
+                                formatMonth.format(now), // Contoh: "Juni 2025"
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey[600],
@@ -602,42 +585,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  (sisa >= 0 ? Colors.green : Colors.red)
-                                      .withOpacity(0.8),
-                                  (sisa >= 0
-                                      ? Colors.green.shade300
-                                      : Colors.red.shade300),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
+                              color: (sisa >= 0 ? Colors.green : Colors.red)
+                                  .withOpacity(0.1),
                               borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: (sisa >= 0 ? Colors.green : Colors.red)
-                                      .withOpacity(0.2),
-                                  blurRadius: 8,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
+                              border: Border.all(
+                                color: (sisa >= 0 ? Colors.green : Colors.red)
+                                    .withOpacity(0.2),
+                              ),
                             ),
                             child: Row(
-                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
                                   sisa >= 0
                                       ? Icons.trending_up
                                       : Icons.trending_down,
-                                  color: Colors.white,
+                                  color: sisa >= 0 ? Colors.green : Colors.red,
                                   size: 16,
                                 ),
-                                SizedBox(width: 4),
+                                SizedBox(width: 6),
                                 Text(
                                   sisa >= 0 ? "Surplus" : "Defisit",
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color:
+                                        sisa >= 0 ? Colors.green : Colors.red,
                                     fontWeight: FontWeight.w600,
                                     fontSize: 12,
                                   ),
@@ -652,14 +622,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         padding: EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [
-                              Color(
-                                0xFF20BF55,
-                              ), // Fresh modern green (sama dengan AppBar)
-                              Color(
-                                0xFF01BAEF,
-                              ), // Modern blue (sama dengan AppBar)
-                            ],
+                            colors: [Color(0xFF20BF55), Color(0xFF01BAEF)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -675,22 +638,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              formatCurrency.format(sisa),
-                              style: TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            SizedBox(height: 8),
                             Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment
-                                      .spaceBetween, // Ubah ke mainAxisAlignment
                               children: [
-                                // Hapus Text yang menampilkan sisa untuk kedua kalinya
+                                Icon(
+                                  Icons.account_balance_wallet_rounded,
+                                  color: Colors.white,
+                                  size: 28,
+                                ),
+                                SizedBox(width: 10),
+                                Text(
+                                  formatCurrency.format(sisa),
+                                  style: TextStyle(
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 12),
+                            Row(
+                              children: [
                                 Container(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 12,
@@ -703,7 +672,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   child: Row(
                                     children: [
                                       Text(
-                                        "${((pemasukan - pengeluaran) / pemasukan * 100).toStringAsFixed(1)}%",
+                                        "${((sisa / pemasukan) * 100).toStringAsFixed(1)}%",
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w600,
@@ -714,7 +683,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       Text(
                                         "dari pemasukan",
                                         style: TextStyle(
-                                          color: Colors.white.withOpacity(0.8),
+                                          color: Colors.white.withOpacity(0.85),
                                           fontSize: 12,
                                         ),
                                       ),
@@ -859,10 +828,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
 
-                // Alerts Section
                 if (alerts.isNotEmpty)
                   Container(
-                    margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    margin: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     padding: EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -878,6 +846,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Header
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -891,26 +860,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             Container(
                               padding: EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
+                                horizontal: 10,
+                                vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(20),
+                                color: Colors.redAccent.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(16),
                               ),
                               child: Row(
-                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
                                     Icons.notifications_active,
-                                    color: Colors.red,
+                                    color: Colors.redAccent,
                                     size: 16,
                                   ),
                                   SizedBox(width: 4),
                                   Text(
                                     "${alerts.length} notifikasi",
                                     style: TextStyle(
-                                      color: Colors.red,
+                                      color: Colors.redAccent,
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -921,7 +889,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ],
                         ),
                         SizedBox(height: 16),
+
+                        // Alerts (bisa limit 2 pertama saja, atau semua jika mau)
                         ...alerts
+                            .take(3)
                             .map(
                               (alert) => Container(
                                 margin: EdgeInsets.only(bottom: 12),
@@ -937,9 +908,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: alert['color'].withOpacity(0.1),
-                                      blurRadius: 8,
-                                      offset: Offset(0, 4),
+                                      color: alert['color'].withOpacity(0.08),
+                                      blurRadius: 6,
+                                      offset: Offset(0, 3),
                                     ),
                                   ],
                                 ),
@@ -952,7 +923,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         MaterialPageRoute(
                                           builder:
                                               (context) =>
-                                                  AlertScreen(alert: alert),
+                                                  AlertScreen(alerts: alerts),
                                         ),
                                       );
                                     },
@@ -971,8 +942,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                                   BorderRadius.circular(12),
                                               border: Border.all(
                                                 color: alert['color']
-                                                    .withOpacity(0.5),
-                                                width: 1,
+                                                    .withOpacity(0.4),
                                               ),
                                             ),
                                             child: Icon(
@@ -981,7 +951,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                               size: 24,
                                             ),
                                           ),
-                                          SizedBox(width: 16),
+                                          SizedBox(width: 14),
                                           Expanded(
                                             child: Column(
                                               crossAxisAlignment:
@@ -990,35 +960,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                                 Text(
                                                   alert['title'],
                                                   style: TextStyle(
-                                                    color: Colors.black87,
                                                     fontWeight: FontWeight.w600,
                                                     fontSize: 15,
+                                                    color: Colors.black87,
                                                   ),
                                                 ),
                                                 SizedBox(height: 4),
                                                 Text(
-                                                  "Ketuk untuk detail",
+                                                  "Ketuk untuk lihat detail & rekomendasi",
                                                   style: TextStyle(
-                                                    color: Colors.grey[600],
                                                     fontSize: 12,
+                                                    color: Colors.grey[600],
                                                   ),
                                                 ),
                                               ],
                                             ),
                                           ),
-                                          Container(
-                                            padding: EdgeInsets.all(8),
-                                            decoration: BoxDecoration(
-                                              color: alert['color'].withOpacity(
-                                                0.1,
-                                              ),
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: Icon(
-                                              Icons.arrow_forward_ios,
-                                              color: alert['color'],
-                                              size: 16,
-                                            ),
+                                          Icon(
+                                            Icons.chevron_right,
+                                            color: alert['color'],
+                                            size: 20,
                                           ),
                                         ],
                                       ),
@@ -1026,13 +987,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ),
                                 ),
                               ),
-                            )
-                            .toList(),
+                            ),
+
+                        // Tombol lihat semua jika lebih dari 3
+                        if (alerts.length > 3)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            AlertScreen(alerts: alerts),
+                                  ),
+                                );
+                              },
+                              child: Text("Lihat Semua"),
+                            ),
+                          ),
                       ],
                     ),
                   ),
 
-                // Financial Score Card
                 Padding(
                   padding: EdgeInsets.all(20),
                   child: Container(
@@ -1066,6 +1044,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             : Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                // TITLE & SCORE
                                 Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
@@ -1081,6 +1060,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                               0.9,
                                             ),
                                             fontSize: 16,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                         SizedBox(height: 8),
@@ -1092,9 +1072,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                               "$skorPersen",
                                               style: TextStyle(
                                                 color: Colors.white,
-                                                fontSize: 36,
+                                                fontSize: 40,
                                                 fontWeight: FontWeight.bold,
                                                 height: 1,
+                                                letterSpacing: 1,
                                               ),
                                             ),
                                             Padding(
@@ -1114,12 +1095,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         ),
                                       ],
                                     ),
+                                    // Icon emosi
                                     Container(
                                       width: 64,
                                       height: 64,
                                       decoration: BoxDecoration(
                                         color: Colors.white.withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(32),
+                                        shape: BoxShape.circle,
                                       ),
                                       child: Center(
                                         child: Icon(
@@ -1135,7 +1117,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: 24),
+
+                                SizedBox(height: 20),
+
+                                // KATEGORI
                                 Container(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: 16,
@@ -1158,21 +1143,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         "Kategori: $evaluationCategory",
                                         style: TextStyle(
                                           color: Colors.white,
-                                          fontSize: 16,
+                                          fontSize: 15,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                SizedBox(height: 16),
+
+                                SizedBox(height: 20),
+
+                                // REKOMENDASI
                                 Container(
                                   padding: EdgeInsets.all(16),
                                   decoration: BoxDecoration(
                                     color: Colors.white.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: Colors.white.withOpacity(0.1),
+                                      color: Colors.white.withOpacity(0.15),
                                       width: 1,
                                     ),
                                   ),
@@ -1205,7 +1193,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                                   0.9,
                                                 ),
                                                 fontSize: 14,
-                                                fontWeight: FontWeight.w500,
+                                                fontWeight: FontWeight.w600,
                                               ),
                                             ),
                                             SizedBox(height: 4),
@@ -1218,7 +1206,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                                   0.8,
                                                 ),
                                                 fontSize: 13,
-                                                height: 1.4,
+                                                height: 1.5,
                                               ),
                                             ),
                                           ],
@@ -1232,14 +1220,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
 
-                // Monthly Stats Section
                 Container(
                   height: 120,
                   margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Color(0xFF20BF55).withOpacity(0.1),
+                    gradient: LinearGradient(
+                      colors: [
+                        Color(0xFF20BF55).withOpacity(0.1),
+                        Colors.white,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                     borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.teal.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Row(
                     children: [
@@ -1255,7 +1256,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 fontSize: 14,
                               ),
                             ),
-                            SizedBox(height: 8),
+                            SizedBox(height: 6),
                             Text(
                               "7 hari terakhir",
                               style: TextStyle(
@@ -1277,6 +1278,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   style: TextStyle(
                                     color: Colors.green,
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 14,
                                   ),
                                 ),
                                 Text(
@@ -1287,6 +1289,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ),
                                 ),
                               ],
+                            ),
+                            Container(
+                              margin: EdgeInsets.only(top: 4),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                "Menurun",
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -1309,6 +1330,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
 
+                // Recent Transactions
                 Container(
                   margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   padding: EdgeInsets.all(20),
@@ -1496,17 +1518,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required String label,
     required Color color,
     required VoidCallback onTap,
+    String? subtitle, // opsional, misal: "Rp 500rb"
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        splashColor: color.withOpacity(0.2),
         child: Container(
+          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.2)),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.08),
+                blurRadius: 8,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1517,18 +1548,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   color: color.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: color, size: 24),
+                child: Icon(icon, color: color, size: 26),
               ),
-              SizedBox(height: 8),
+              SizedBox(height: 10),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                   color: Colors.black87,
-                  fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
               ),
+              if (subtitle != null) ...[
+                SizedBox(height: 4),
+                Text(
+                  subtitle!,
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ],
           ),
         ),
