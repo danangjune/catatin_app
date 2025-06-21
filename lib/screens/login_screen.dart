@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -51,10 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF20BF55), // Fresh modern green
-                Color(0xFF01BAEF), // Modern blue
-              ],
+              colors: [Color(0xFF20BF55), Color(0xFF01BAEF)],
             ),
           ),
           child: SafeArea(
@@ -69,15 +67,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       Stack(
                         alignment: Alignment.center,
                         children: [
-                          // Lingkaran glow semi-transparan
                           Container(
                             width: 120,
                             height: 120,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white.withOpacity(
-                                0.15,
-                              ), // Halus dan nyatu
+                              color: Colors.white.withOpacity(0.15),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.white.withOpacity(0.3),
@@ -88,7 +83,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               ],
                             ),
                           ),
-                          // Logo PNG
                           Container(
                             padding: EdgeInsets.all(20),
                             child: Image.asset(
@@ -102,17 +96,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       SizedBox(height: 24),
                       Text(
                         'CatatIn',
-                        style: TextStyle(
+                        style: GoogleFonts.poppins(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
-                          letterSpacing: 2,
+                          letterSpacing: 1.2,
                         ),
                       ),
                       SizedBox(height: 8),
                       Text(
                         'Catatan Keuangan Cerdas, Setiap Hari',
-                        style: TextStyle(
+                        style: GoogleFonts.poppins(
                           color: Colors.white.withOpacity(0.9),
                           fontSize: 16,
                         ),
@@ -121,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                // Login Form Section
+                // Form Section
                 Expanded(
                   flex: 4,
                   child: Container(
@@ -147,16 +141,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           SizedBox(height: 40),
                           Text(
                             'Selamat Datang',
-                            style: TextStyle(
-                              fontSize: 28,
+                            style: GoogleFonts.poppins(
+                              fontSize: 25,
                               fontWeight: FontWeight.bold,
                               color: Colors.black87,
                             ),
                           ),
                           Text(
                             'Silakan masuk untuk melanjutkan',
-                            style: TextStyle(
-                              fontSize: 16,
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
                               color: Colors.grey[600],
                             ),
                           ),
@@ -166,6 +160,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             decoration: InputDecoration(
                               labelText: 'Email',
                               prefixIcon: Icon(Icons.email_outlined),
+                              labelStyle: GoogleFonts.poppins(),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -190,6 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             decoration: InputDecoration(
                               labelText: 'Password',
                               prefixIcon: Icon(Icons.lock_outline),
+                              labelStyle: GoogleFonts.poppins(),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscureText
@@ -240,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     Expanded(
                                       child: Text(
                                         errorMsg,
-                                        style: TextStyle(
+                                        style: GoogleFonts.poppins(
                                           color: Colors.red[700],
                                         ),
                                       ),
@@ -274,7 +270,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       )
                                       : Text(
                                         'Masuk',
-                                        style: TextStyle(
+                                        style: GoogleFonts.poppins(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.white,
@@ -288,7 +284,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             children: [
                               Text(
                                 'Belum punya akun? ',
-                                style: TextStyle(color: Colors.grey[600]),
+                                style: GoogleFonts.poppins(
+                                  color: Colors.grey[600],
+                                ),
                               ),
                               TextButton(
                                 onPressed: () {
@@ -299,7 +297,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 child: Text(
                                   'Daftar',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                  style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ],

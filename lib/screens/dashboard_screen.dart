@@ -7,7 +7,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import '../services/auth_service.dart';
 import '../widgets/bottom_nav.dart';
 import '../widgets/sparkline_painter.dart';
-import 'package:fl_chart/fl_chart.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -766,6 +765,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     Navigator.pushNamed(context, '/evaluation'),
                           ),
                           _buildMenuItem(
+                            icon: Icons.notification_important_rounded,
+                            label: "Notifikasi",
+                            color: Colors.red,
+                            width: itemWidth,
+                            onTap: () {},
+                          ),
+                          _buildMenuItem(
+                            icon: Icons.trending_up_rounded,
+                            label: "Tren",
+                            color: Colors.indigo,
+                            width: itemWidth,
+                            onTap: () {},
+                          ),
+                          _buildMenuItem(
                             icon: Icons.receipt_long_rounded,
                             label: "Riwayat",
                             color: Colors.orange,
@@ -774,23 +787,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 () => Navigator.pushNamed(context, '/history'),
                           ),
                           _buildMenuItem(
-                            icon: Icons.notification_important_rounded,
-                            label: "Notifikasi",
-                            color: Colors.red,
-                            width: itemWidth,
-                            onTap: () {},
-                          ),
-                          _buildMenuItem(
                             icon: Icons.account_circle_rounded,
                             label: "Profil",
                             color: Colors.teal,
-                            width: itemWidth,
-                            onTap: () {},
-                          ),
-                          _buildMenuItem(
-                            icon: Icons.trending_up_rounded,
-                            label: "Tren",
-                            color: Colors.indigo,
                             width: itemWidth,
                             onTap: () {},
                           ),
@@ -1183,117 +1182,116 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
 
-                // Tren Pengeluaran
-                Container(
-                  height: 120,
-                  margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Color(0xFF20BF55).withOpacity(0.1),
-                        Colors.white,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.teal.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Tren Pengeluaran",
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                            SizedBox(height: 6),
-                            Text(
-                              "7 hari terakhir",
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
-                            ),
-                            Spacer(),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.trending_down,
-                                  color: Colors.green,
-                                  size: 16,
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  "12.5%",
-                                  style: TextStyle(
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                Text(
-                                  " vs minggu lalu",
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Container(
-                              margin: EdgeInsets.only(top: 4),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                "Menurun",
-                                style: TextStyle(
-                                  color: Colors.green,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        width: 100,
-                        child: CustomPaint(
-                          painter: SparklinePainter([
-                            0.5,
-                            0.3,
-                            0.7,
-                            0.4,
-                            0.8,
-                            0.6,
-                            0.5,
-                          ]),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
+                // // Tren Pengeluaran
+                // Container(
+                //   height: 120,
+                //   margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                //   padding: EdgeInsets.all(16),
+                //   decoration: BoxDecoration(
+                //     gradient: LinearGradient(
+                //       colors: [
+                //         Color(0xFF20BF55).withOpacity(0.1),
+                //         Colors.white,
+                //       ],
+                //       begin: Alignment.topLeft,
+                //       end: Alignment.bottomRight,
+                //     ),
+                //     borderRadius: BorderRadius.circular(16),
+                //     boxShadow: [
+                //       BoxShadow(
+                //         color: Colors.teal.withOpacity(0.1),
+                //         blurRadius: 10,
+                //         offset: Offset(0, 4),
+                //       ),
+                //     ],
+                //   ),
+                //   child: Row(
+                //     children: [
+                //       Expanded(
+                //         child: Column(
+                //           crossAxisAlignment: CrossAxisAlignment.start,
+                //           children: [
+                //             Text(
+                //               "Tren Pengeluaran",
+                //               style: TextStyle(
+                //                 color: Colors.black87,
+                //                 fontWeight: FontWeight.w600,
+                //                 fontSize: 14,
+                //               ),
+                //             ),
+                //             SizedBox(height: 6),
+                //             Text(
+                //               "7 hari terakhir",
+                //               style: TextStyle(
+                //                 color: Colors.grey[600],
+                //                 fontSize: 12,
+                //               ),
+                //             ),
+                //             Spacer(),
+                //             Row(
+                //               children: [
+                //                 Icon(
+                //                   Icons.trending_down,
+                //                   color: Colors.green,
+                //                   size: 16,
+                //                 ),
+                //                 SizedBox(width: 4),
+                //                 Text(
+                //                   "12.5%",
+                //                   style: TextStyle(
+                //                     color: Colors.green,
+                //                     fontWeight: FontWeight.bold,
+                //                     fontSize: 14,
+                //                   ),
+                //                 ),
+                //                 Text(
+                //                   " vs minggu lalu",
+                //                   style: TextStyle(
+                //                     color: Colors.grey[600],
+                //                     fontSize: 12,
+                //                   ),
+                //                 ),
+                //               ],
+                //             ),
+                //             Container(
+                //               margin: EdgeInsets.only(top: 4),
+                //               padding: EdgeInsets.symmetric(
+                //                 horizontal: 8,
+                //                 vertical: 2,
+                //               ),
+                //               decoration: BoxDecoration(
+                //                 color: Colors.green.withOpacity(0.15),
+                //                 borderRadius: BorderRadius.circular(12),
+                //               ),
+                //               child: Text(
+                //                 "Menurun",
+                //                 style: TextStyle(
+                //                   color: Colors.green,
+                //                   fontSize: 10,
+                //                   fontWeight: FontWeight.w600,
+                //                 ),
+                //               ),
+                //             ),
+                //           ],
+                //         ),
+                //       ),
+                //       Container(
+                //         width: 100,
+                //         child: CustomPaint(
+                //           painter: SparklinePainter([
+                //             0.5,
+                //             0.3,
+                //             0.7,
+                //             0.4,
+                //             0.8,
+                //             0.6,
+                //             0.5,
+                //           ]),
+                //         ),
+                //       ),
+                //     ],
+                //   ),
+                // ),
                 Container(
                   margin: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   padding: EdgeInsets.all(20),
