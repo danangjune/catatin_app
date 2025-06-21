@@ -6,7 +6,6 @@ import 'package:catatin_app/utils/score_calculator.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../services/auth_service.dart';
 import '../widgets/bottom_nav.dart';
-import '../widgets/sparkline_painter.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
