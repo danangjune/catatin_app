@@ -33,7 +33,7 @@ dependencies:
   get: ^4.6.5 # Untuk navigasi dan state management ringan
   http: ^1.1.0 # Untuk komunikasi dengan backend
   intl: ^0.18.1 # Untuk format tanggal & angka
-  fl_chart: ^0.65.0 # Untuk grafik
+  fl_chart: ^0.66.0 # Untuk grafik
   cached_network_image: ^3.2.3
   shared_preferences: ^2.2.2
   lottie: ^2.6.0

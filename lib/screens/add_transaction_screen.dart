@@ -115,7 +115,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Transaksi berhasil ditambahkan')),
           );
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Gagal: ${responseData['message']}')),
