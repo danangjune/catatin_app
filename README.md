@@ -1,85 +1,103 @@
-# 📘 CatatIn – Aplikasi Pencatat Keuangan Pribadi
+# 📘 CatatIn – Pencatat Keuangan & Evaluasi Finansial
 
-CatatIn adalah aplikasi mobile berbasis Flutter yang terhubung ke backend Laravel, dirancang untuk membantu pengguna mencatat transaksi keuangan harian, mengelola tabungan, dan mengevaluasi kondisi finansial secara otomatis menggunakan metode SAW (Simple Additive Weighting).
+CatatIn adalah aplikasi Flutter yang terhubung ke backend Laravel. Aplikasi ini membantu mencatat pemasukan dan pengeluaran harian, mengelola target tabungan, serta mengevaluasi kesehatan keuangan secara otomatis menggunakan metode **Simple Additive Weighting (SAW)**.
 
 ## 🚀 Fitur Utama
 
-### 1. Pencatatan Transaksi Harian
-- Tambah pemasukan & pengeluaran
-- Pilihan kategori (makan, transportasi, dll)
-- Tambah keterangan dan tanggal
+### Autentikasi
+- Registrasi dan login menggunakan token
+- Penyimpanan token dengan `shared_preferences`
 
-### 2. Manajemen Tabungan
-- Tentukan target tabungan bulanan
-- Lihat progres tabungan
-- Dorongan untuk konsistensi
+### Dashboard
+- Ringkasan pemasukan, pengeluaran, dan sisa saldo bulan berjalan
+- Grafik tren pemasukan/pengeluaran dan komposisi kategori
+- Notifikasi cerdas: defisit, jarang mencatat, pengeluaran berlebihan, pendapatan menurun, hingga target tabungan belum tercapai
 
-### 3. Rekapitulasi Bulanan
-- Ringkasan pemasukan, pengeluaran, dan sisa
+### Pencatatan Transaksi
+- Input pemasukan atau pengeluaran dengan kategori yang dapat dipilih
+- Form keterangan, tanggal, serta nominal (format Rupiah)
+- Edit atau hapus transaksi melalui layar riwayat
 
-### 4. Evaluasi Keuangan Otomatis (SAW Sederhana)
-- Skor kesehatan finansial berdasarkan 5 kriteria:
+### Target Tabungan Bulanan
+- Atur target tabungan setiap bulan dan pantau progresnya
+- Fitur tambah tabungan harian dan riwayat tabungan bulan sebelumnya
+
+### Evaluasi Keuangan
+- Hitung skor SAW berdasarkan:
   - Rasio pemasukan/pengeluaran
   - Konsistensi menabung
   - Pengeluaran tak terduga
   - Frekuensi pencatatan
   - Persentase tabungan
-- Kategori: Baik / Cukup / Buruk
-- Rekomendasi personal
+- Kategori hasil: Sangat Baik, Baik, Cukup, Kurang, atau Sangat Kurang
+- Rekomendasi otomatis sesuai skor
 
-### 5. Peringatan Cerdas (Tidak Cerdas2 Amat)
-- Defisit pengeluaran
-- Tidak mencatat transaksi 7+ hari
-- Tidak menabung bulan ini
-- Penurunan pendapatan
+### Riwayat & Filter
+- Daftar transaksi lengkap dengan filter jenis (pemasukan/pengeluaran) dan tanggal
+- Tersedia opsi hapus atau edit
 
-### 6. Riwayat & Filter
-- Lihat riwayat transaksi dan evaluasi
-- Filter data berdasarkan kategori, tanggal, dll
-
-### 7. Profil Pengguna
-- Nama, ringkasan keuangan
-- Pengingat pencatatan harian
+### Profil Pengguna
+- Informasi akun dan ringkasan finansial bulan ini
+- Pengaturan sederhana dan fitur logout
 
 ## 🛠 Teknologi
-- **Frontend:** Flutter
-- **Backend:** Laravel (API)
-- **Database:** MySQL
+- **Flutter** 3.7
+- **Laravel** (REST API)
+- `fl_chart`, `google_fonts`, `lottie`, `shared_preferences`, dll
+- Folder `android/`, `ios/`, `linux/`, `macos/`, `windows/`, dan `web/` untuk dukungan multiplatform
 
-## 📂 Struktur Proyek (Frontend)
+## 📂 Struktur Folder Penting
 
+```
 lib/
 ├── main.dart
 ├── screens/
-│ ├── dashboard_screen.dart
-│ ├── add_transaction_screen.dart
-│ ├── savings_screen.dart
-│ ├── evaluation_screen.dart
-│ ├── history_screen.dart
-│ └── profile_screen.dart
-├── widgets/
-│ ├── transaction_card.dart
-│ └── summary_card.dart
+│   ├── splash_screen.dart
+│   ├── login_screen.dart
+│   ├── register_screen.dart
+│   ├── dashboard_screen.dart
+│   ├── add_transaction_screen.dart
+│   ├── savings_screen.dart
+│   ├── evaluation_screen.dart
+│   ├── history_screen.dart
+│   ├── profile_screen.dart
+│   └── alert_screen.dart
 ├── models/
-│ └── transaction.dart
-└── utils/
-└── helpers.dart
+│   ├── user.dart
+│   ├── transaction.dart
+│   └── alert.dart
+├── services/
+│   └── auth_service.dart
+├── widgets/
+│   ├── bottom_nav.dart
+│   ├── expense_pie_chart.dart
+│   ├── sparkline_painter.dart
+│   └── trend_bar_chart.dart
+├── utils/
+│   ├── score_calculator.dart
+│   └── constants.dart
+└── ...
+```
 
-## 📂 Struktur Proyek (Backend)
+## ⚙️ Cara Menjalankan
 
-soon.
-
-## ⚙️ Cara Menjalankan (Frontend)
-
-1. Clone repo:
-   - git clone https://github.com/danangjune/catatin.git
-   - cd catatin
-2. Jalankan:
-   - flutter pub get
-   - flutter run
+1. Clone repo ini
+   ```bash
+   git clone <repo-url>
+   cd catatin_app
+   ```
+2. Install dependensi
+   ```bash
+   flutter pub get
+   ```
+3. Jalankan aplikasi
+   ```bash
+   flutter run
+   ```
+   Pastikan backend Laravel berjalan sesuai alamat yang didefinisikan pada `AuthService.baseUrl`.
 
 ## 🧑‍💻 Kontribusi
-Pull Request dipersilakan! Buka issue jika ada bug atau saran fitur.
+Pull request dan issue sangat terbuka. Silakan laporkan bug atau saran fitur melalui halaman issue.
 
 ## 📄 Lisensi
 © 2025 D. June
