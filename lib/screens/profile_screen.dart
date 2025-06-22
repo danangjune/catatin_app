@@ -292,7 +292,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           onPressed:
                                               () =>
                                                   Navigator.pop(context, false),
-                                          child: Text("Batal"),
+                                          child: Text(
+                                            "Batal",
+                                            style: TextStyle(
+                                              color: const Color.fromARGB(
+                                                255,
+                                                0,
+                                                0,
+                                                0,
+                                              ),
+                                            ),
+                                          ),
                                         ),
                                         ElevatedButton(
                                           onPressed:
@@ -301,7 +311,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Colors.red,
                                           ),
-                                          child: Text("Keluar"),
+                                          child: Text(
+                                            "Keluar",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),

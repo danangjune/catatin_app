@@ -192,7 +192,9 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        iconTheme: IconThemeData(color: Colors.black87),
+        iconTheme: IconThemeData(
+          color: const Color.fromARGB(221, 255, 255, 255),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(

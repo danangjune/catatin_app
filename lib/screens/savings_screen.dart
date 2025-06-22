@@ -243,7 +243,10 @@ class _SavingsScreenState extends State<SavingsScreen> {
           ),
           actions: [
             TextButton(
-              child: Text("Batal", style: TextStyle(color: Colors.grey)),
+              child: Text(
+                "Batal",
+                style: TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
+              ),
               onPressed: () => Navigator.pop(context),
             ),
             ElevatedButton(
@@ -254,7 +257,12 @@ class _SavingsScreenState extends State<SavingsScreen> {
                 ),
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
-              child: Text("Simpan"),
+              child: Text(
+                "Simpan",
+                style: TextStyle(
+                  color: const Color.fromARGB(255, 253, 253, 253),
+                ),
+              ),
               onPressed: () async {
                 final tambah = controller.numberValue.toInt();
                 if (tambah > 0 && _savingId != null) {
@@ -319,7 +327,9 @@ class _SavingsScreenState extends State<SavingsScreen> {
           "Target Tabungan",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
-        iconTheme: IconThemeData(color: Colors.black87),
+        iconTheme: IconThemeData(
+          color: const Color.fromARGB(221, 255, 255, 255),
+        ),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.only(bottom: 85),
