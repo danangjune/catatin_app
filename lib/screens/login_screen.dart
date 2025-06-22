@@ -58,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: SafeArea(
             child: Column(
               children: [
-                // Logo Section
+                // Logo section
                 Expanded(
                   flex: 3,
                   child: Column(
@@ -115,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                // Form Section
+                // Form section
                 Expanded(
                   flex: 4,
                   child: Container(

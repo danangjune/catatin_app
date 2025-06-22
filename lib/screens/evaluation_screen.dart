@@ -102,42 +102,42 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
   }
 
   double _calculateIncomeRatio(double ratio) {
-    if (ratio <= 0.5) return 5; // Pengeluaran <= 50% pemasukan
-    if (ratio <= 0.7) return 4; // Pengeluaran <= 70% pemasukan
-    if (ratio <= 0.9) return 3; // Pengeluaran <= 90% pemasukan
-    if (ratio <= 1.0) return 2; // Pengeluaran <= 100% pemasukan
-    return 1; // Pengeluaran > 100% pemasukan
+    if (ratio <= 0.5) return 5; // Expenses ≤ 50% of income
+    if (ratio <= 0.7) return 4; // Expenses ≤ 70% of income
+    if (ratio <= 0.9) return 3; // Expenses ≤ 90% of income
+    if (ratio <= 1.0) return 2; // Expenses ≤ 100% of income
+    return 1; // Expenses > 100% of income
   }
 
   double _calculateSavingConsistency(int consistency) {
-    if (consistency >= 4) return 5; // Menabung >= 4 minggu
-    if (consistency >= 3) return 4; // Menabung 3 minggu
-    if (consistency >= 2) return 3; // Menabung 2 minggu
-    if (consistency >= 1) return 2; // Menabung 1 minggu
-    return 1; // Tidak menabung
+    if (consistency >= 4) return 5; // Saved ≥ 4 weeks
+    if (consistency >= 3) return 4; // Saved 3 weeks
+    if (consistency >= 2) return 3; // Saved 2 weeks
+    if (consistency >= 1) return 2; // Saved 1 week
+    return 1; // No savings
   }
 
   double _calculateUnexpectedExpense(double ratio) {
-    if (ratio <= 0.05) return 5; // Pengeluaran tak terduga <= 5% pemasukan
-    if (ratio <= 0.10) return 4; // <= 10%
-    if (ratio <= 0.15) return 3; // <= 15%
-    if (ratio <= 0.20) return 2; // <= 20%
+    if (ratio <= 0.05) return 5; // Unexpected expense ≤ 5% of income
+    if (ratio <= 0.10) return 4; // ≤ 10%
+    if (ratio <= 0.15) return 3; // ≤ 15%
+    if (ratio <= 0.20) return 2; // ≤ 20%
     return 1; // > 20%
   }
 
   double _calculateRecordFrequency(int days) {
-    if (days >= 25) return 5; // Mencatat >= 25 hari
-    if (days >= 20) return 4; // >= 20 hari
-    if (days >= 15) return 3; // >= 15 hari
-    if (days >= 10) return 2; // >= 10 hari
-    return 1; // < 10 hari
+    if (days >= 25) return 5; // Recorded ≥ 25 days
+    if (days >= 20) return 4; // ≥ 20 days
+    if (days >= 15) return 3; // ≥ 15 days
+    if (days >= 10) return 2; // ≥ 10 days
+    return 1; // < 10 days
   }
 
   double _calculateSavingPercentage(double percentage) {
-    if (percentage >= 20) return 5; // Menabung >= 20% pemasukan
-    if (percentage >= 15) return 4; // >= 15%
-    if (percentage >= 10) return 3; // >= 10%
-    if (percentage >= 5) return 2; // >= 5%
+    if (percentage >= 20) return 5; // Saved ≥ 20% of income
+    if (percentage >= 15) return 4; // ≥ 15%
+    if (percentage >= 10) return 3; // ≥ 10%
+    if (percentage >= 5) return 2; // ≥ 5%
     return 1; // < 5%
   }
 
@@ -202,10 +202,10 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
           child: Padding(
             padding: EdgeInsets.only(
               bottom: 85.0,
-            ), // Add bottom padding for nav bar
+            ), // Add bottom padding for the navigation bar
             child: Column(
               children: [
-                // Score Card
+                // Score card
                 Container(
                   width: double.infinity,
                   margin: EdgeInsets.all(16),
@@ -336,7 +336,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                     ),
                   ),
 
-                // Recommendation Card
+                // Recommendation card
                 Container(
                   margin: EdgeInsets.symmetric(horizontal: 16),
                   padding: EdgeInsets.all(20),
@@ -382,7 +382,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                   ),
                 ),
 
-                // Criteria Details
+                // Criteria details
                 Container(
                   margin: EdgeInsets.all(16),
                   padding: EdgeInsets.all(20),
@@ -464,7 +464,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: CustomBottomNav(
         currentIndex: 2,
-      ), // Use index 2 for evaluation
+      ), // Use index 2 for evaluation screen
     );
   }
 

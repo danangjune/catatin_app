@@ -2,7 +2,7 @@ class User {
   final int id;
   final String name;
   final String email;
-  final Map<String, dynamic> monthlyStats; // For monthly statistics
+  final Map<String, dynamic> monthlyStats; // Monthly statistics
 
   User({
     required this.id,

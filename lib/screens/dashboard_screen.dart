@@ -240,7 +240,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     alerts.clear();
     final now = DateTime.now();
 
-    // 1. Cek Defisit
+    // 1. Check for deficit
     if (pengeluaran > pemasukan) {
       alerts.add({
         'icon': Icons.warning_amber,
@@ -256,7 +256,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     }
 
-    // 2. Cek Transaksi 7 Hari Terakhir
+    // 2. Check for transactions in the last 7 days
     final lastWeekDate = now.subtract(Duration(days: 7));
     final hasRecentTransactions = transactions.any(
       (t) => DateTime.parse(t['date']).isAfter(lastWeekDate),
@@ -276,7 +276,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     }
 
-    // 3. Cek Kategori Pengeluaran Tinggi
+    // 3. Check for high spending categories
     final categoryTotals = {};
     for (var tx in transactions.where((t) => t['type'] == 'expense')) {
       final category = tx['category'] ?? 'Lainnya';
@@ -302,7 +302,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     });
 
-    // 4. Cek Tren Pemasukan
+    // 4. Check income trend
     final thisMonthIncome = transactions
         .where(
           (t) =>
@@ -339,7 +339,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     }
 
-    // 5. Cek Target Tabungan
+    // 5. Check saving target
     if (savingInfo != null) {
       final targetSavings = savingInfo!['target_amount'] ?? 0;
       final currentSavings = savingInfo!['saved_amount'] ?? 0;
@@ -438,7 +438,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
         actions: [
-          // Notifikasi
+          // Notifications
           Container(
             margin: EdgeInsets.symmetric(horizontal: 4),
             child: Stack(
@@ -448,7 +448,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   icon: Icon(
                     Icons.notifications_none_rounded,
                     color: Colors.white,
-                    size: 28, // perbesar sedikit agar badge tidak nutupi
+                    size: 28, // Slightly larger so the badge is visible
                   ),
                   onPressed: () {
                     if (alerts.isNotEmpty) {
@@ -458,7 +458,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           builder:
                               (context) => AlertScreen(
                                 alerts: alerts,
-                              ), // tampilkan semua alerts
+                              ), // Show all alerts
                         ),
                       );
                     }
@@ -497,7 +497,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
           ),
-          // Profile
+          // Profile button
           Container(
             margin: EdgeInsets.only(right: 8),
             child: IconButton(
@@ -520,12 +520,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header Section dengan gradient
+                // Header section with gradient
                 Container(
                   width: double.infinity,
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.85), // efek glassmorphism
+                    color: Colors.white.withOpacity(0.85), // subtle glass effect
                     borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(30),
                       bottomRight: Radius.circular(30),
@@ -567,7 +567,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                               SizedBox(height: 4),
                               Text(
-                                formatMonth.format(now), // "Juni 2025"
+                                formatMonth.format(now), // e.g. "Juni 2025"
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.grey[600],
@@ -615,7 +615,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
                       SizedBox(height: 20),
-                      // Total Balance Card
+                      // Total balance card
                       Container(
                         padding: EdgeInsets.all(18),
                         decoration: BoxDecoration(
@@ -695,7 +695,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                       SizedBox(height: 18),
-                      // Income and Outcome Cards
+                      // Income and expense cards
                       Row(
                         children: [
                           Expanded(
@@ -727,7 +727,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final itemWidth =
-                          (constraints.maxWidth - 45) / 4; // 4 item per baris
+                          (constraints.maxWidth - 45) / 4; // 4 items per row
                       return Wrap(
                         spacing: 15,
                         runSpacing: 15,
@@ -808,7 +808,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
 
-                // Alert Section
+                // Alert section
                 if (alerts.isNotEmpty)
                   Container(
                     margin: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -863,7 +863,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Daftar Alert Card
+                        // Alert card list
                         ...alerts
                             .take(3)
                             .map(
@@ -996,12 +996,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 : Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // HEADER
+                                    // Header
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        // Judul dan Skor
+                                        // Title and score
                                         Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
@@ -1049,7 +1049,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                             ),
                                           ],
                                         ),
-                                        // Emoji Icon
+                                        // Emoji icon
                                         Container(
                                           width: 60,
                                           height: 60,
@@ -1078,7 +1078,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                                     SizedBox(height: 18),
 
-                                    // KATEGORI
+                                    // Category
                                     Container(
                                       padding: EdgeInsets.symmetric(
                                         horizontal: 14,
@@ -1111,7 +1111,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                                     SizedBox(height: 18),
 
-                                    // REKOMENDASI
+                                    // Recommendation
                                     Container(
                                       padding: EdgeInsets.all(14),
                                       decoration: BoxDecoration(
@@ -1546,7 +1546,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Update _buildBalanceCard
+  // Helper to build the balance card
   Widget _buildBalanceCard(
     String title,
     double amount,

@@ -64,7 +64,7 @@ class AuthService {
     }
   }
 
-  // ✅ Tambahkan helper ini
+  // Helper for authenticated requests
   static Future<http.Response> authenticatedGet(String endpoint) async {
     final token = await getToken();
     final url = Uri.parse('$baseUrl$endpoint');

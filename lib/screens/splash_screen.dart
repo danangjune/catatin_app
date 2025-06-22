@@ -75,7 +75,7 @@ class _SplashScreenState extends State<SplashScreen>
         child: SafeArea(
           child: Stack(
             children: [
-              // Background Circles
+              // Background circles
               Positioned(
                 top: -100,
                 right: -100,
@@ -117,7 +117,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
 
-              // Main Content
+              // Main content
               Center(
                 child: AnimatedBuilder(
                   animation: _controller,
@@ -131,7 +131,7 @@ class _SplashScreenState extends State<SplashScreen>
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // LOGO + GLOW + AURA
+                              // Logo with glow and aura
                               Stack(
                                 alignment: Alignment.center,
                                 children: [
@@ -167,7 +167,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                               SizedBox(height: 10),
 
-                              // APP NAME
+                              // App name
                               Text(
                                 'CatatIn',
                                 style: GoogleFonts.poppins(
@@ -179,7 +179,7 @@ class _SplashScreenState extends State<SplashScreen>
                               ),
                               SizedBox(height: 16),
 
-                              // TAGLINE
+                              // Tagline
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(20),
                                 child: BackdropFilter(
@@ -212,7 +212,7 @@ class _SplashScreenState extends State<SplashScreen>
                               ),
                               SizedBox(height: 48),
 
-                              // PROGRESS BAR (tetap kamu punya)
+                              // Progress bar
                               Container(
                                 width: 160,
                                 height: 4,

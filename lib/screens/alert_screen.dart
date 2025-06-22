@@ -175,7 +175,7 @@ class AlertScreen extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Card Alert
+              // Alert card
               Container(
                 margin: EdgeInsets.only(bottom: 16),
                 padding: EdgeInsets.all(20),
@@ -237,7 +237,7 @@ class AlertScreen extends StatelessWidget {
                 ),
               ),
 
-              // Rekomendasi
+              // Recommendations
               ..._buildRecommendations(title).map(
                 (rec) => Container(
                   margin: EdgeInsets.only(bottom: 12),

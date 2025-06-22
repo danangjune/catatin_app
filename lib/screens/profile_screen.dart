@@ -90,7 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           IconButton(
             icon: Icon(Icons.edit_outlined, color: Colors.white),
             onPressed: () {
-              // TODO: Implement edit profile
+              // TODO: implement profile editing
             },
           ),
         ],
@@ -101,7 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               : SingleChildScrollView(
                 child: Column(
                   children: [
-                    // Profile Header
+                    // Profile header
                     Container(
                       padding: EdgeInsets.all(24),
                       decoration: BoxDecoration(
@@ -176,7 +176,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
 
-                    // Financial Summary
+                    // Financial summary
                     Container(
                       margin: EdgeInsets.all(16),
                       padding: EdgeInsets.all(20),
@@ -228,7 +228,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
 
-                    // Settings Section
+                    // Settings section
                     Container(
                       margin: EdgeInsets.all(16),
                       padding: EdgeInsets.all(20),
@@ -360,11 +360,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildFinancialItem(
     String label,
-    dynamic amount, // Change type to dynamic
+    dynamic amount, // Accepts both int and String
     IconData icon,
     Color color,
   ) {
-    // Convert amount to int
+    // Convert amount to an integer
     final int value = amount is String ? int.parse(amount) : amount as int;
 
     return Row(

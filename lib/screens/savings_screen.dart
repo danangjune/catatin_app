@@ -426,7 +426,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
               ),
             ),
 
-            // Target Edit
+            // Target edit
             Container(
               margin: EdgeInsets.all(16),
               padding: EdgeInsets.all(20),
@@ -475,7 +475,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
               ),
             ),
 
-            // Quick actions (Refactored)
+            // Quick actions (refactored)
             Container(
               margin: EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -501,7 +501,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
               ),
             ),
 
-            // Riwayat
+            // Savings history
             if (_savingHistory.isNotEmpty)
               Container(
                 margin: EdgeInsets.all(16),
