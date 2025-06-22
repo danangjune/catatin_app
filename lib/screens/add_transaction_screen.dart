@@ -16,10 +16,10 @@ class AddTransactionScreen extends StatefulWidget {
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _formKey = GlobalKey<FormState>();
   final MoneyMaskedTextController _amountController = MoneyMaskedTextController(
-    decimalSeparator: '', // Tidak pakai desimal
-    thousandSeparator: '.', // Pemisah ribuan pakai titik
-    precision: 0, // Tidak pakai angka di belakang koma
-    leftSymbol: 'Rp ', // Tambah simbol Rupiah
+    decimalSeparator: '', // No decimal separator
+    thousandSeparator: '.', // Use dot as thousand separator
+    precision: 0, // No digits after the comma
+    leftSymbol: 'Rp ', // Prefix with Rupiah symbol
   );
   final TextEditingController _descController = TextEditingController();
 
@@ -85,7 +85,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       final String backendType =
           _selectedType == 'Pemasukan' ? 'income' : 'expense';
 
-      // Ambil angka asli tanpa format
+      // Retrieve the raw number without formatting
       final rawAmount = _amountController.numberValue.toInt();
 
       final body = {

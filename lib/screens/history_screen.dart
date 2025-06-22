@@ -230,7 +230,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 onRefresh: fetchTransactions,
                 child: Column(
                   children: [
-                    // Filter dropdown
+                    // Filter dropdown menu
                     Padding(
                       padding: EdgeInsets.all(16),
                       child: DropdownButtonFormField<String>(
@@ -257,7 +257,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       ),
                     ),
 
-                    // Summary
+                    // Summary section
                     Container(
                       margin: EdgeInsets.symmetric(horizontal: 16),
                       padding: EdgeInsets.all(16),
@@ -303,7 +303,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       ),
                     ),
 
-                    // List Transaksi
+                    // Transaction list
                     Expanded(
                       child:
                           filteredTransactions.isEmpty

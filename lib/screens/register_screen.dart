@@ -56,7 +56,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: SafeArea(
                 child: Column(
                   children: [
-                    // Logo & Judul
+                    // Logo and title
                     Expanded(
                       flex: 2,
                       child: Column(
@@ -97,7 +97,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
 
-                    // Form Registrasi
+                    // Registration form
                     Expanded(
                       flex: 5,
                       child: Container(
@@ -138,7 +138,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               SizedBox(height: 28),
 
-                              // Input Nama
+                              // Name input
                               TextFormField(
                                 controller: nameCtrl,
                                 decoration: InputDecoration(
@@ -163,7 +163,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               SizedBox(height: 18),
 
-                              // Input Email
+                              // Email input
                               TextFormField(
                                 controller: emailCtrl,
                                 keyboardType: TextInputType.emailAddress,
@@ -189,7 +189,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               SizedBox(height: 18),
 
-                              // Input Password
+                              // Password input
                               TextFormField(
                                 controller: passCtrl,
                                 obscureText: _obscureText,
@@ -262,7 +262,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               SizedBox(height: 30),
 
-                              // Tombol Daftar
+                              // Register button
                               SizedBox(
                                 width: double.infinity,
                                 height: 50,
@@ -293,7 +293,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               SizedBox(height: 20),
 
-                              // Link ke login
+                              // Link to login
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [

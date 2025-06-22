@@ -8,7 +8,7 @@ class Alert {
   final DateTime createdAt;
   final DateTime? readAt;
   final Map<String, dynamic>?
-  metadata; // For storing additional data like amounts
+  metadata; // Additional data such as amounts
 
   Alert({
     this.id,

@@ -9,7 +9,7 @@ class CustomBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 80, // Tambah height container
+      height: 80, // Increase container height
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
@@ -21,7 +21,7 @@ class CustomBottomNav extends StatelessWidget {
       ),
       child: ClipRRect(
         child: BottomAppBar(
-          height: 80, // Sesuaikan height bottomAppBar
+          height: 80, // Match the BottomAppBar height
           notchMargin: 8,
           shape: CircularNotchedRectangle(),
           child: Row(
@@ -75,11 +75,11 @@ class CustomBottomNav extends StatelessWidget {
         padding: EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 4,
-        ), // Kurangi vertical padding
+        ), // Reduce vertical padding
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment:
-              MainAxisAlignment.center, // Tambah ini untuk posisi tengah
+              MainAxisAlignment.center, // Center items vertically
           children: [
             Icon(
               icon,
