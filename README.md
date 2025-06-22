@@ -83,7 +83,7 @@ lib/
 
 1. Clone repo ini
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/danangjune/catatin_app
    cd catatin_app
    ```
 2. Install dependensi
@@ -95,6 +95,16 @@ lib/
    flutter run
    ```
    Pastikan backend Laravel berjalan sesuai alamat yang didefinisikan pada `AuthService.baseUrl`.
+
+### Menjalankan Backend Laravel
+
+1. Clone `https://github.com/danangjune/catatin-backend`.
+2. Jalankan `composer install`.
+3. Salin `.env.example` ke `.env`, atur database, dan jalankan `php artisan key:generate`.
+4. Eksekusi `php artisan migrate`.
+5. Mulai server dengan `php artisan serve --port=8000`.
+
+`AuthService.baseUrl` dan seluruh URL HTTP mengarah ke `http://localhost:8000`.
 
 ## 🧑‍💻 Kontribusi
 Pull request dan issue sangat terbuka. Silakan laporkan bug atau saran fitur melalui halaman issue.
